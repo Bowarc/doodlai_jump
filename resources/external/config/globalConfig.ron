@@ -1,0 +1,15 @@
+(
+    user: (
+        input_binds: {
+            UiPauseMenuOpen: KeyboardEscape
+        },
+    ),
+    window: (
+        v_sync: false,
+        size: (1366, 768),
+        fullscreen_type: Windowed,
+        samples: One,
+        srgb: true,
+        resizable: true,
+    )    
+)

@@ -1,0 +1,19 @@
+{
+    MissingNo: "missingno.png",
+
+    DoodleLeft: "blue_lik_left.png",
+    DoodleRight: "blue_lik_right.png",
+
+    BluePlatform: "blue_platform.png",
+    GreenPlatform: "green_platform.png",
+    RedPlatform: "red_platform.png",
+    WhitePlatform: "white_platform.png",
+    CrackedPlatform0: "cracked_platform_0.png",
+    CrackedPlatform1: "cracked_platform_1.png",
+    CrackedPlatform2: "cracked_platform_2.png",
+    CrackedPlatform3: "cracked_platform_3.png",
+    Mob0: "mob0.png",
+    Mob1: "mob1.png",
+    Mob2Left: "mob2_left.png",
+    Mob2Right: "mob2_right.png",
+}

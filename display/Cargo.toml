@@ -1,0 +1,33 @@
+[package]
+name = "display"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[[bin]]
+name = "display"
+path = "src/main.rs"
+
+[dependencies]
+rust-embed = { version = "8.0.0", features = ["interpolate-folder-path", "debug-embed"] }
+game = {path = "../game"}
+ggegui = {git = "https://github.com/Bowarc/ggegui"}
+maths = {git = "https://github.com/Bowarc/Crates.git", package = "maths", features=["ggez"]}
+triple_buffer.workspace = true
+ggez.workspace = true
+derivative.workspace = true
+serde.workspace = true
+hashbrown.workspace = true
+ron.workspace = true
+log.workspace = true
+spin_sleep.workspace = true
+thiserror.workspace = true
+logger.workspace = true
+threading.workspace = true
+networking.workspace = true
+time.workspace = true
+mem.workspace = true
+random.workspace = true
+enum_dispatch = "0.3.12"
+enum_variant_name.workspace = true
