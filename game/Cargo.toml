@@ -11,13 +11,7 @@ name = "game"
 crate-type = ["rlib"]
 
 [dependencies]
-thiserror.workspace = true
-serde.workspace = true
-ggez.workspace = true
-log.workspace = true
-networking.workspace = true
 time.workspace = true
-ron.workspace = true
-lazy_static = "1.4.0"
-enum_variant_name.workspace = true
 logger.workspace = true
+maths.workspace = true
+random.workspace = true

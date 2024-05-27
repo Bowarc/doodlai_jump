@@ -58,7 +58,6 @@ impl FrameStats {
         render_request: &mut crate::render::RenderRequest,
         in_loading_requests: &[crate::assets::loader::Request],
     ) -> ggez::GameResult {
-        use ggez::graphics::Drawable as _;
 
         let time_frag = self.draw_time_measurements(ctx);
         let render_frag = self.draw_render_stats(in_loading_requests);
@@ -68,7 +67,7 @@ impl FrameStats {
 
         total_text.set_layout(ggez::graphics::TextLayout::top_left());
 
-        let ttd = total_text.dimensions(ctx).unwrap();
+        // let ttd = total_text.dimensions(ctx).unwrap();
         render_request.add(
             total_text,
             crate::render::DrawParam::new().pos(position),

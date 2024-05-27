@@ -6,10 +6,10 @@
     ),
     window: (
         v_sync: false,
-        size: (1366, 768),
+        size: (540, 960),
         fullscreen_type: Windowed,
         samples: One,
         srgb: true,
-        resizable: true,
+        resizable: false,
     )    
 )

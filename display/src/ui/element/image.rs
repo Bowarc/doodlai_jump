@@ -29,7 +29,7 @@ impl super::TElement for Image {
         &mut self,
         ctx: &mut ggez::Context,
         back_mesh: &mut ggez::graphics::MeshBuilder,
-        ui_mesh: &mut ggez::graphics::MeshBuilder,
+        _ui_mesh: &mut ggez::graphics::MeshBuilder,
         front_mesh: &mut ggez::graphics::MeshBuilder,
         render_request: &mut crate::render::RenderRequest,
     ) -> ggez::GameResult {

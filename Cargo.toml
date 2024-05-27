@@ -21,11 +21,7 @@ ron = "0.8.1"
 thiserror = "1.0.48"
 spin_sleep = "1.1.1"
 logger = {git = "https://github.com/Bowarc/Crates.git", package = "logger"}
-networking = {git = "https://github.com/Bowarc/Crates.git", package = "networking"}
 time = {git = "https://github.com/Bowarc/Crates.git", package = "time"}
 random = {git = "https://github.com/Bowarc/Crates.git", package = "random"}
-threading = {git = "https://github.com/Bowarc/Crates.git", package = "threading"}
-mem = {git = "https://github.com/Bowarc/Crates.git", package = "mem"}
 maths = {git = "https://github.com/Bowarc/Crates.git", package = "maths"}
-triple_buffer = {git = "https://github.com/Bowarc/triple-buffer"}
-enum_variant_name = {git = "https://github.com/Bowarc/Crates.git", package = "enum_variant_name"}
+threading = {git = "https://github.com/Bowarc/Crates.git", package = "threading"}

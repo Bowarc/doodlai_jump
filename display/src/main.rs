@@ -20,7 +20,7 @@ struct Chess {
     frame_stats: utils::framestats::FrameStats,
     gui_menu: gui::Gui,
     global_ui: ui::UiManager,
-    current_game: game::Game,
+    game: game::Game,
 }
 
 impl Chess {
@@ -33,7 +33,7 @@ impl Chess {
 
         let mut global_ui = ui::UiManager::default();
 
-        let id = global_ui.add_element(
+        let _ = global_ui.add_element(
             ui::element::Element::new_graph(
                 "fps graph",
                 (ui::Anchor::TopRight, (-2., 2.)),
@@ -57,106 +57,8 @@ impl Chess {
             ),
             "",
         );
-        let id2 = global_ui.add_element(
-            ui::element::Element::new_graph(
-                "rtt graph",
-                (ui::Anchor::TopRight, (-2., 52.)),
-                (200., 50.),
-                ui::Style::new(
-                    render::Color::random_rgb(),
-                    None,
-                    Some(ui::style::Border::new(render::Color::WHITE, 1.)),
-                ),
-                Some(
-                    ui::element::GraphText::default()
-                        .anchor(ui::Anchor::Topleft)
-                        .offset(maths::Vec2::ONE)
-                        .text(|val| -> String {
-                            format!(
-                                "RTT: {}",
-                                time::format(std::time::Duration::from_secs_f64(val), 1)
-                            )
-                        })
-                        .size(8.)
-                        .color(render::Color::random_rgb()),
-                ),
-            ),
-            "",
-        );
 
-        // let text_id = global_ui.add_element(ui::element::Element::new_text(
-        //     ui::Position::new_anchor(ui::Anchor::TopCenter, (0., 2.)),
-        //     20.,
-        //     ui::Style::new(
-        //         render::Color::WHITE,
-        //         // Some(ui::style::Background::new(render::Color::WHITE, Some(assets::sprite::SpriteId::MissingNo))),
-        //         None,
-        //         Some(ui::style::Border::new(render::Color::random_rgb(), 2.)),
-        //     ),
-        //     vec![
-        //         ui::element::TextBit::new_text(
-        //             String::from("This is a test string"),
-        //             Some(render::Color::from_rgb(255, 0, 0)),
-        //         ),
-        //         ui::element::TextBit::new_text(
-        //             String::from("This is a test string2"),
-        //             Some(render::Color::from_rgb(0, 255, 0)),
-        //         ),
-        //         ui::element::TextBit::new_text(
-        //             String::from("This is a test string3"),
-        //             Some(render::Color::from_rgb(0, 0, 255)),
-        //         ),
-        //         ui::element::TextBit::new_text(
-        //             String::from("\n"),
-        //             Some(render::Color::from_rgb(0, 255, 0)),
-        //         ),
-        //         ui::element::TextBit::new_img(assets::sprite::SpriteId::MissingNo),
-        //         ui::element::TextBit::new_text(
-        //             String::from("This seccond string should be on another line|"),
-        //             Some(render::Color::from_rgb(0, 0, 255)),
-        //         ),
-        //         ui::element::TextBit::new_text("".to_string(), None),
-        //         ui::element::TextBit::new_text(
-        //             String::from("\n\nNew String\n"),
-        //             Some(render::Color::random_rgb()),
-        //         ),
-        //         ui::element::TextBit::NewLine,
-        //         ui::element::TextBit::new_img(assets::sprite::SpriteId::MissingNo)
-        //     ],
-        // ));
-
-        // let text_edit_id = global_ui.add_element(ui::element::Element::new_text_edit(
-        //     "Text edit 1",
-        //     ui::Position::new_anchor(ui::Anchor::TopCenter, (0., 2.)),
-        //     200.,
-        //     3,
-        //     40.,
-        //     ui::style::Bundle::new(
-        //         ui::Style::new(
-        //             render::Color::default(),
-        //             Some(ui::style::Background::new(
-        //                 render::Color::random_rgb(),
-        //                 None,
-        //             )),
-        //             Some(ui::style::Border::new(render::Color::random_rgb(), 1.)),
-        //         ),
-        //         Some(ui::Style::new(
-        //             render::Color::random_rgb(),
-        //             Some(ui::style::Background::new(
-        //                 render::Color::random_rgb(),
-        //                 None,
-        //             )),
-        //             Some(ui::style::Border::default()),
-        //         )),
-        //         Some(ui::Style::new(
-        //             render::Color::random_rgb(),
-        //             None,
-        //             Some(ui::style::Border::new(render::Color::random_rgb(), 1.)),
-        //         )),
-        //     ),
-        // ));
-
-        let mp_id = global_ui.add_element(
+        let _ = global_ui.add_element(
             ui::element::Element::new_text(
                 "mouse pos text",
                 (ui::Anchor::BotRight, (-1., -1.)),
@@ -169,7 +71,7 @@ impl Chess {
                     )),
                     Some(ui::style::Border::new(render::Color::random_rgb(), 1.)),
                 ),
-                vec!["".into()],
+                vec![],
             ),
             "",
         );
@@ -187,20 +89,23 @@ impl Chess {
             ];
 
             for anchor in anchors.iter() {
-                global_ui.add_element(ui::element::Element::new_button(
-                    format!("Anchor {anchor:?} test guide"),
-                    *anchor,
-                    ui::Vector::new(10., 10.),
-                    ui::Style::new(
-                        render::Color::from_rgba(100, 100, 100, 100),
-                        Some(ui::style::Background::new(
-                            render::Color::from_rgb(100, 100, 100),
-                            None,
-                        )),
-                        Some(ui::style::Border::new(render::Color::random_rgb(), 2.)),
-                    )
-                    .into(),
-                ), "test");
+                global_ui.add_element(
+                    ui::element::Element::new_button(
+                        format!("Anchor {anchor:?} test guide"),
+                        *anchor,
+                        ui::Vector::new(10., 10.),
+                        ui::Style::new(
+                            render::Color::from_rgba(100, 100, 100, 100),
+                            Some(ui::style::Background::new(
+                                render::Color::from_rgb(100, 100, 100),
+                                None,
+                            )),
+                            Some(ui::style::Border::new(render::Color::random_rgb(), 2.)),
+                        )
+                        .into(),
+                    ),
+                    "test",
+                );
             }
         }
 
@@ -211,7 +116,7 @@ impl Chess {
             frame_stats: utils::framestats::FrameStats::new(),
             gui_menu,
             global_ui,
-            current_game: game::Game::new(),
+            game: game::Game::new(),
         })
     }
 }
@@ -225,6 +130,15 @@ impl ggez::event::EventHandler for Chess {
         self.frame_stats.begin_update();
 
         let dt: f64 = ctx.time.delta().as_secs_f64();
+
+        self.game.update(dt);
+
+        // game inputs
+        if input::pressed(ctx, input::Input::KeyboardQ){
+            self.game.player_move_left()
+        }else if input::pressed(ctx, input::Input::KeyboardD){
+            self.game.player_move_right()
+        }
 
         self.gui_menu.update(ctx, &mut self.cfg)?;
 
@@ -280,6 +194,32 @@ impl ggez::event::EventHandler for Chess {
         self.gui_menu.draw(ctx, render_request)?;
 
         self.global_ui.draw(ctx, render_request)?;
+
+        // Draw game
+
+        for platform in self.game.platforms.iter() {
+            render_request.add(
+                assets::sprite::SpriteId::BluePlatform,
+                render::DrawParam::new()
+                    .pos(platform.rect.center())
+                    .size(platform.rect.size()),
+                render::Layer::Game,
+            );
+        }
+
+        render_request.add(
+            match self.game.player.direction() {
+                0 => assets::sprite::SpriteId::MissingNo,
+                1 => assets::sprite::SpriteId::DoodleRight,
+                -1 => assets::sprite::SpriteId::DoodleLeft,
+                _ => unreachable!(),
+            },
+            render::DrawParam::new()
+                .pos(self.game.player.rect.center())
+                .size(self.game.player.rect.size()),
+            render::Layer::Game,
+        );
+
 
         let render_log = self.renderer.run(
             ctx,
@@ -488,14 +428,14 @@ fn main() -> ggez::GameResult {
         .add_filter("naga", log::LevelFilter::Warn)
         .add_filter("networking", log::LevelFilter::Debug)
         .add_filter("ggez", log::LevelFilter::Warn);
-    logger::init(logger_config, Some("./log/client.log"));
+    logger::init(logger_config, Some("./log/display.log"));
     // logger::test();
 
     assets::file::list();
 
     let config: config::Config = config::load();
 
-    let cb = ggez::ContextBuilder::new("Chess game", "Bowarc")
+    let cb = ggez::ContextBuilder::new("Doodlai display window", "Bowarc")
         .resources_dir_name("resources\\external\\")
         .window_setup(
             ggez::conf::WindowSetup::default()
@@ -506,7 +446,7 @@ fn main() -> ggez::GameResult {
                 .srgb(config.window.srgb),
         )
         .window_mode(config.window.into())
-        .backend(ggez::conf::Backend::Dx12);
+        .backend(ggez::conf::Backend::Vulkan);
 
     // if let Ok(manifest_dir) = std::env::var("CARGO_MANIFEST_DIR") {
     //     let mut path = std::path::PathBuf::from(manifest_dir);

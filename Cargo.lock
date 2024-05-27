@@ -185,15 +185,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9d297deb1925b89f2ccc13d7635fa0714f12c87adce1c75356b39ca9b7178567"
 
 [[package]]
-name = "bincode"
-version = "1.3.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b1f45e9417d87227c7a56d22e471c6206462cba514c7590c09aff4cf6d1ddcad"
-dependencies = [
- "serde",
-]
-
-[[package]]
 name = "bindgen"
 version = "0.69.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -756,7 +747,6 @@ version = "0.1.0"
 dependencies = [
  "derivative",
  "enum_dispatch",
- "enum_variant_name",
  "game",
  "ggegui",
  "ggez",
@@ -764,17 +754,13 @@ dependencies = [
  "log",
  "logger",
  "maths",
- "mem",
- "networking",
  "random",
  "ron",
  "rust-embed",
  "serde",
  "spin_sleep",
- "thiserror",
  "threading",
  "time",
- "triple_buffer",
 ]
 
 [[package]]
@@ -840,15 +826,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.48",
-]
-
-[[package]]
-name = "enum_variant_name"
-version = "0.1.0"
-source = "git+https://github.com/Bowarc/Crates.git#00c44c577f039f4bc5e0e84772155264466944cb"
-dependencies = [
- "quote",
- "syn 1.0.109",
 ]
 
 [[package]]
@@ -965,15 +942,9 @@ checksum = "00b0228411908ca8685dba7fc2cdd70ec9990a6e753e89b6ac91a84c40fbaf4b"
 name = "game"
 version = "0.1.0"
 dependencies = [
- "enum_variant_name",
- "ggez",
- "lazy_static",
- "log",
  "logger",
- "networking",
- "ron",
- "serde",
- "thiserror",
+ "maths",
+ "random",
  "time",
 ]
 
@@ -1642,11 +1613,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "mem"
-version = "0.1.0"
-source = "git+https://github.com/Bowarc/Crates.git#00c44c577f039f4bc5e0e84772155264466944cb"
-
-[[package]]
 name = "memchr"
 version = "2.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1774,21 +1740,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3cf2aae958bd232cac5069850591667ad422d263686d75b52a065f9badeee5a3"
 dependencies = [
  "jni-sys",
-]
-
-[[package]]
-name = "networking"
-version = "0.1.0"
-source = "git+https://github.com/Bowarc/Crates.git#00c44c577f039f4bc5e0e84772155264466944cb"
-dependencies = [
- "bincode",
- "log",
- "serde",
- "spin_sleep",
- "thiserror",
- "threading",
- "time",
- "triple_buffer",
 ]
 
 [[package]]
@@ -2293,13 +2244,8 @@ dependencies = [
  "game",
  "log",
  "logger",
- "networking",
- "random",
- "spin_sleep",
  "thiserror",
- "threading",
  "time",
- "triple_buffer",
 ]
 
 [[package]]
@@ -2793,14 +2739,6 @@ dependencies = [
  "indexmap 2.2.2",
  "toml_datetime",
  "winnow",
-]
-
-[[package]]
-name = "triple_buffer"
-version = "6.2.0"
-source = "git+https://github.com/Bowarc/triple-buffer#5e4e13d64ee2181e66ce32ecd6ff03e9604642c0"
-dependencies = [
- "crossbeam-utils",
 ]
 
 [[package]]
