@@ -8,14 +8,16 @@ pub struct Player {
     pub rect: maths::Rect,
     pub velocity: maths::Vec2,
     pub current_direction: Option<bool>, // True -> Right as True == 1 == positive movement == Right
+    side_collision_tag: bool,
 }
 
 impl Player {
     pub fn new() -> Self {
         Self {
-            rect: maths::Rect::new_from_center((540. / 2., 960. / 2.), (100., 100.), 0.),
+            rect: maths::Rect::new_from_center((540. / 2., 960. / 2.), (60., 60.), 0.),
             velocity: maths::Vec2::ZERO,
             current_direction: None,
+            side_collision_tag: false,
         }
     }
 
@@ -31,30 +33,57 @@ impl Player {
         self.rect
             .set_center(self.rect.center() + self.velocity * dt);
 
+        let mut collided_this_frame = false;
+
         for platform in platforms.iter() {
-            if maths::collision::rect_rect_no_r(self.rect, platform.rect) {
-                // collision from above
-                if self.rect.aa_botleft().y > platform.rect.aa_topleft().y && self.velocity.y > 0. {
-                    self.velocity.y = -JUMP_HEIGHT;
-                    self.rect
-                        .set_center(self.rect.center() - maths::Vec2::new(0., 1.));
-                    println!("Collision from above")
-                } else if self.rect.aa_topleft().y < platform.rect.aa_botleft().y
-                    && self.velocity.y < 0.
-                {
-                    self.velocity.y = 0.0;
-                    self.rect.set_center(maths::Vec2::new(
-                        0.,
-                        platform.rect.aa_botleft().y + platform.rect.height(),
-                    ));
-                    println!("Collision from below")
-                } else {
-                    println!("Collision from side")
-                }
-                break;
+            if !maths::collision::rect_rect_no_r(self.rect, platform.rect) {
+                continue;
             }
+            if self.rect.center().x < platform.rect.aa_topleft().x && self.velocity.x > 0. {
+                // collision from the left
+                self.velocity.x = 0.;
+                self.rect.set_center((
+                    platform.rect.aa_topleft().x - self.rect.width() / 2. - 1.,
+                    self.rect.center().y,
+                ));
+
+                println!("Collsion from the left")
+            } else if self.rect.center().x > platform.rect.aa_topright().x && self.velocity.x < 0. {
+                // collision from the right
+
+                self.rect.set_center((
+                    platform.rect.aa_topright().x + self.rect.width() / 2.,
+                    self.rect.center().y,
+                ));
+
+                self.velocity.x = 0.;
+                println!("Collsion from the right")
+            } else if self.velocity.y > 0. && !self.side_collision_tag {
+                // collision from above
+                self.velocity.y = -JUMP_HEIGHT;
+                self.rect
+                    .set_center(self.rect.center() - maths::Vec2::new(0., 1.));
+                println!("Collision from above")
+            } else if self.velocity.y < 0. && !self.side_collision_tag {
+                // collision from below
+                self.velocity.y = 0.0;
+                self.rect.set_center(maths::Vec2::new(
+                    self.rect.center().x,
+                    platform.rect.aa_botleft().y
+                        + platform.rect.height()
+                        + self.rect.height() / 2.
+                        + 1.,
+                ));
+                println!("Collision from below")
+            }
+            collided_this_frame = true;
+
+            break;
         }
-        println!("{}", self.rect.center());
+        if !collided_this_frame {
+            self.side_collision_tag = false;
+        }
+        // println!("{}", self.rect.center());
 
         self.velocity.y += GRAVITY * dt;
         self.velocity.x = SPEED * self.direction() as f64;

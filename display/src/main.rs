@@ -140,6 +140,7 @@ impl ggez::event::EventHandler for Chess {
             self.game.player_move_right()
         }
 
+
         self.gui_menu.update(ctx, &mut self.cfg)?;
 
         self.global_ui.update(ctx);
@@ -199,9 +200,9 @@ impl ggez::event::EventHandler for Chess {
 
         for platform in self.game.platforms.iter() {
             render_request.add(
-                assets::sprite::SpriteId::BluePlatform,
+                assets::sprite::SpriteId::GreenPlatform,
                 render::DrawParam::new()
-                    .pos(platform.rect.center())
+                    .pos(platform.rect.center() - maths::Vec2::new(0., self.game.scroll as f64))
                     .size(platform.rect.size()),
                 render::Layer::Game,
             );
@@ -215,7 +216,7 @@ impl ggez::event::EventHandler for Chess {
                 _ => unreachable!(),
             },
             render::DrawParam::new()
-                .pos(self.game.player.rect.center())
+                .pos(self.game.player.rect.center() - maths::Vec2::new(0., self.game.scroll as f64))
                 .size(self.game.player.rect.size()),
             render::Layer::Game,
         );
