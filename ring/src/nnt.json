@@ -1,253 +1,171 @@
 {
     "input_layer": [{
         "inputs": [],
-        "bias": 0.8124073,
+        "bias": 0.67673165,
         "activation": "linear_activation"
     }, {
         "inputs": [],
-        "bias": 0.5495511,
+        "bias": 0.7312398,
         "activation": "linear_activation"
     }, {
         "inputs": [],
-        "bias": 0.010031164,
+        "bias": 0.5033568,
         "activation": "linear_activation"
     }, {
         "inputs": [],
-        "bias": 0.8212189,
+        "bias": 0.005350411,
         "activation": "linear_activation"
     }, {
         "inputs": [],
-        "bias": 0.6159588,
+        "bias": 0.14666897,
         "activation": "linear_activation"
     }, {
         "inputs": [],
-        "bias": 0.3978395,
+        "bias": 0.9706655,
         "activation": "linear_activation"
     }, {
         "inputs": [],
-        "bias": 0.48938668,
+        "bias": 0.79077166,
         "activation": "linear_activation"
     }, {
         "inputs": [],
-        "bias": 0.2500831,
+        "bias": 0.4223687,
         "activation": "linear_activation"
     }, {
         "inputs": [],
-        "bias": 0.33824915,
+        "bias": 0.048701286,
         "activation": "linear_activation"
     }, {
         "inputs": [],
-        "bias": 0.21131235,
+        "bias": 0.8237865,
         "activation": "linear_activation"
     }, {
         "inputs": [],
-        "bias": 0.98393613,
+        "bias": 0.17127275,
         "activation": "linear_activation"
     }, {
         "inputs": [],
-        "bias": 0.084989786,
+        "bias": 0.7318573,
         "activation": "linear_activation"
     }, {
         "inputs": [],
-        "bias": 0.43772715,
+        "bias": 0.9722133,
         "activation": "linear_activation"
     }, {
         "inputs": [],
-        "bias": 0.11714035,
+        "bias": 0.64167535,
         "activation": "linear_activation"
     }, {
         "inputs": [],
-        "bias": 0.61207587,
+        "bias": 0.86054456,
         "activation": "linear_activation"
     }, {
         "inputs": [],
-        "bias": 0.24924946,
+        "bias": 0.90151465,
         "activation": "linear_activation"
     }, {
         "inputs": [],
-        "bias": 0.26062047,
+        "bias": 0.6026295,
         "activation": "linear_activation"
     }, {
         "inputs": [],
-        "bias": 0.19818002,
+        "bias": 0.9886991,
         "activation": "linear_activation"
     }, {
         "inputs": [],
-        "bias": 0.14106917,
+        "bias": 0.91013443,
         "activation": "linear_activation"
     }, {
         "inputs": [],
-        "bias": 0.07528597,
+        "bias": 0.36328268,
         "activation": "linear_activation"
     }, {
         "inputs": [],
-        "bias": 0.40030122,
+        "bias": 0.9289548,
         "activation": "linear_activation"
     }, {
         "inputs": [],
-        "bias": 0.99668133,
+        "bias": 0.90939325,
         "activation": "linear_activation"
     }, {
         "inputs": [],
-        "bias": 0.9167263,
+        "bias": 0.26951015,
         "activation": "linear_activation"
     }, {
         "inputs": [],
-        "bias": 0.44953465,
+        "bias": 0.24958372,
         "activation": "linear_activation"
     }],
-    "hidden_layers": [],
+    "hidden_layers": [{
+        "inputs": [
+            [{
+                "Input": 18
+            }, 0.5339973]
+        ],
+        "bias": 0.9299827,
+        "activation": "f32::tanh"
+    }],
     "output_layer": [{
         "inputs": [
             [{
-                "Input": 21
-            }, -0.43357086],
-            [{
-                "Input": 23
-            }, -0.7121515],
-            [{
-                "Input": 17
-            }, -0.35426974],
-            [{
-                "Input": 13
-            }, 0.48632622],
-            [{
-                "Input": 10
-            }, 0.8146548],
-            [{
-                "Input": 22
-            }, -0.17349577],
-            [{
-                "Input": 17
-            }, 0.67797923],
-            [{
-                "Input": 19
-            }, -0.38614655],
-            [{
-                "Input": 17
-            }, -0.5883491],
-            [{
-                "Input": 18
-            }, 0.9368541],
-            [{
                 "Input": 0
-            }, 0.6435406],
-            [{
-                "Input": 7
-            }, 0.6274121],
-            [{
-                "Input": 15
-            }, -0.95343256],
-            [{
-                "Input": 10
-            }, -0.92638683],
-            [{
-                "Input": 4
-            }, -0.6750293],
-            [{
-                "Input": 10
-            }, -0.6037297],
-            [{
-                "Input": 20
-            }, 0.3332951],
-            [{
-                "Input": 12
-            }, 0.59576344]
-        ],
-        "bias": 0.27972078,
-        "activation": "sigmoid"
-    }, {
-        "inputs": [
-            [{
-                "Input": 14
-            }, 0.40667677],
-            [{
-                "Input": 23
-            }, -0.86442494],
-            [{
-                "Input": 4
-            }, -0.5831604],
-            [{
-                "Input": 18
-            }, -0.6647122],
-            [{
-                "Input": 14
-            }, -0.050868988],
-            [{
-                "Input": 14
-            }, -0.42315102],
-            [{
-                "Input": 18
-            }, 0.15757585],
-            [{
-                "Input": 16
-            }, -0.932178],
-            [{
-                "Input": 13
-            }, -0.11216307],
-            [{
-                "Input": 2
-            }, 0.035220146],
-            [{
-                "Input": 15
-            }, 0.5643244],
+            }, 0.152112],
             [{
                 "Input": 9
-            }, -0.50772023],
+            }, 0.23059988],
             [{
-                "Input": 13
-            }, 0.075927496],
+                "Input": 14
+            }, -0.88926053],
             [{
-                "Input": 10
-            }, 0.8166292],
+                "Input": 18
+            }, -0.4571994],
             [{
                 "Input": 23
-            }, -0.7339723],
-            [{
-                "Input": 1
-            }, 0.1650784],
-            [{
-                "Input": 4
-            }, 0.2601912],
-            [{
-                "Input": 2
-            }, -0.5491669],
+            }, 0.7840774],
             [{
                 "Input": 16
-            }, -0.43302608],
-            [{
-                "Input": 12
-            }, -0.6844399]
+            }, 0.68542683]
         ],
-        "bias": 0.29072315,
+        "bias": 0.573353,
         "activation": "sigmoid"
     }, {
         "inputs": [
             [{
-                "Input": 15
-            }, -0.5275378],
+                "Input": 11
+            }, -0.58784056],
             [{
-                "Input": 13
-            }, -0.16603136],
+                "Input": 3
+            }, 0.075671196],
             [{
-                "Input": 4
-            }, -0.55754423],
-            [{
-                "Input": 18
-            }, 0.36921334],
-            [{
-                "Input": 8
-            }, -0.9275923],
-            [{
-                "Input": 15
-            }, -0.81133795],
+                "Input": 20
+            }, -0.089775085],
             [{
                 "Input": 6
-            }, -0.21573567]
+            }, 0.025018275]
         ],
-        "bias": 0.79427487,
+        "bias": 0.9413458,
+        "activation": "sigmoid"
+    }, {
+        "inputs": [
+            [{
+                "Input": 0
+            }, -0.4061699],
+            [{
+                "Input": 7
+            }, 0.36927438],
+            [{
+                "Hidden": 0
+            }, -0.22710676],
+            [{
+                "Input": 6
+            }, 0.98780197],
+            [{
+                "Input": 3
+            }, 0.7560718]
+        ],
+        "bias": 0.86358804,
         "activation": "sigmoid"
     }],
-    "mutation_rate": 0.01,
+    "mutation_rate": 0.1,
     "mutation_passes": 3
 }

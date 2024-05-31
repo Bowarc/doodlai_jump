@@ -1,17 +1,18 @@
 use neat::GenerateRandomCollection;
+use std::io::Write as _;
 
 #[macro_use]
 extern crate log;
 mod agent;
 mod utils;
 
-const NB_GAMES: usize = 10;
-const GAME_TIME_S: usize = 100; // Nb of secconds we let the ai play the game before registering their scrore
+const NB_GAMES: usize = 20;
+const GAME_TIME_S: usize = 60; // Nb of secconds we let the ai play the game before registering their scrore
 const GAME_DT: f64 = 0.0166;
 const NB_GENERATIONS: usize = 15;
-const NB_GENOME_PER_GEN: usize = 100;
+const NB_GENOME_PER_GEN: usize = 1000;
 
-static mut LOADED_NNT: Option<neat::NeuralNetworkTopology<{agent::IN}, {agent::OUT}>> = None;
+static mut LOADED_NNT: Option<neat::NeuralNetworkTopology<{ agent::IN }, { agent::OUT }>> = None;
 
 fn fitness(dna: &agent::DNA) -> f32 {
     let agent = agent::Agent::from(dna);
@@ -31,14 +32,18 @@ fn play_game(agent: &agent::Agent, rng: &mut rand::rngs::ThreadRng) -> f32 {
 
     // loop for the number of frames we want to play, should be enough frames to play 100s at 60fps
     for i in 0..((1. / GAME_DT) * GAME_TIME_S as f64) as usize {
+        if game.lost {
+            break;
+        }
+
         let mut inputs = Vec::new();
 
-        let rect_to_vec = |rect: &maths::Rect| -> [f32; 4] {
+        let rect_to_vec = |rect: &maths::Rect| -> [f32; 2] {
             [
                 rect.center().x as f32,
                 rect.center().y as f32,
-                rect.width() as f32,
-                rect.height() as f32,
+                // rect.width() as f32,
+                // rect.height() as f32,
             ]
         };
 
@@ -53,11 +58,9 @@ fn play_game(agent: &agent::Agent, rng: &mut rand::rngs::ThreadRng) -> f32 {
             temp
         };
 
-        for platform in closest_platforms {
+        for platform in game.platforms.iter() {
             inputs.extend(rect_to_vec(&platform.rect));
         }
-
-        assert_eq!(inputs.len(), 24);
 
         let action =
             neat::MaxIndex::max_index(agent.network.predict(inputs.try_into().unwrap()).iter());
@@ -69,10 +72,14 @@ fn play_game(agent: &agent::Agent, rng: &mut rand::rngs::ThreadRng) -> f32 {
             _ => (),
         }
 
-        game.update(GAME_DT)
+        game.update(GAME_DT);
     }
 
     game.score()
+}
+
+fn write_to_file(){
+
 }
 
 fn main() {
@@ -86,12 +93,14 @@ fn main() {
 
     debug!("Starting training server");
 
-    let nnt  = serde_json::from_str::<neat::NNTSerde<{agent::IN}, {agent::OUT}>>(include_str!("./nnt.json")).unwrap();
+    // let nnt = serde_json::from_str::<neat::NNTSerde<{ agent::IN }, { agent::OUT }>>(include_str!(
+    //     "./nnt.json"
+    // ))
+    // .unwrap();
 
-    unsafe{
-        LOADED_NNT = Some(nnt.into());
-    };
-
+    // unsafe {
+    //     LOADED_NNT = Some(nnt.into());
+    // };
 
     let mut sim = neat::GeneticSim::new(
         Vec::gen_random(NB_GENOME_PER_GEN),
@@ -99,14 +108,21 @@ fn main() {
         neat::crossover_pruning_nextgen,
     );
 
-
     for i in 0..NB_GENERATIONS {
         if !running.load(std::sync::atomic::Ordering::SeqCst) {
             info!("Exit requested");
             break;
         }
-        debug!("Generation {i}, {} since start",  time::format(stopwatch.read(), 2));
-        sim.next_generation()
+        debug!(
+            "Generation {}/{}, {:?} since start",
+            i + 1,
+            NB_GENERATIONS,
+            stopwatch.read()
+        );
+
+        sim.next_generation();
+        let data = sim.genomes.iter().map(|dna| format!("{dna:?}\n")).collect::<String>();
+        std::fs::File::create("./nn.backup").unwrap().write_all(data.as_bytes()).unwrap();
     }
     debug!("Generation done, parsing outputs");
 
@@ -115,9 +131,13 @@ fn main() {
         .iter()
         .map(|dna| (dna, fitness(dna)))
         .collect::<Vec<_>>();
-    fits.sort_by(|(dnaa, fita), (dnab, fitb)| fita.partial_cmp(&fitb).unwrap());
+    fits.sort_by(|(dnaa, fita), (dnab, fitb)| fitb.partial_cmp(&fita).unwrap());
 
-    debug!("Max score: {}", &fits[0].1);
+    debug!(
+        "Max score: {}\nMin score: {}",
+        &fits[0].1,
+        &fits[fits.len() - 1].1
+    );
 
     {
         let intermediate = neat::NNTSerde::from(&fits[0].0.network);
@@ -130,3 +150,4 @@ fn main() {
         time::format(stopwatch.read(), 3)
     );
 }
+

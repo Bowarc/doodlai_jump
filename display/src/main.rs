@@ -21,7 +21,7 @@ struct Display {
     gui_menu: gui::Gui,
     global_ui: ui::UiManager,
     game: game::Game,
-    nn: neat::NeuralNetwork<24, 3>
+    nn: neat::NeuralNetwork<12, 3>
 
 }
 
@@ -120,7 +120,7 @@ impl Display {
             global_ui,
             game: game::Game::new(),
             nn: {
-                let topology: neat::NeuralNetworkTopology<24, 3> = serde_json::from_str::<neat::NNTSerde<24, 3>>(include_str!("./nnt.json")).unwrap().into();
+                let topology: neat::NeuralNetworkTopology<12, 3> = serde_json::from_str::<neat::NNTSerde<12, 3>>(include_str!("./nnt.json")).unwrap().into();
                 (&topology).into()
             }
         })
@@ -162,15 +162,9 @@ impl ggez::event::EventHandler for Display {
             inputs.extend(rect_to_vec(&self.game.player.rect));
 
             // ordered by distance to player
-            let closest_platforms = {
-                let mut temp = self.game.platforms.clone();
-                temp.sort_unstable_by_key(|platfrom| {
-                    maths::get_distance(platfrom.rect.center(), self.game.player.rect.center()) as i32
-                });
-                temp
-            };
 
-            for platform in closest_platforms {
+
+            for platform in self.game.platforms.iter() {
                 inputs.extend(rect_to_vec(&platform.rect));
             }
 
