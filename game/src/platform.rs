@@ -1,6 +1,5 @@
-pub const PLATFORM_BASE_WIDTH: f64 = 100.;
+pub const PLATFORM_BASE_WIDTH: f64 = 70.;
 pub const PLATFORM_BASE_HEIGHT: f64 = 20.;
-
 
 
 pub enum PlatformType{
@@ -9,7 +8,7 @@ pub enum PlatformType{
 
 
 
-
+#[derive(Clone)]
 pub struct Platform{
     pub rect: maths::Rect
 }

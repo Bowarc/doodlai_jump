@@ -13,8 +13,8 @@ crate-type = ["rlib"]
 [dependencies]
 time.workspace = true
 logger.workspace = true
-maths = {git = "https://github.com/Bowarc/Crates.git", package = "maths"}
 random.workspace = true
+maths.workspace = true
 
 
 

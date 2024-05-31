@@ -16,3 +16,4 @@ log = "0.4.20"
 logger = {git = "https://github.com/Bowarc/Crates.git", package = "logger"}
 time = {git = "https://github.com/Bowarc/Crates.git", package = "time"}
 random = {git = "https://github.com/Bowarc/Crates.git", package = "random"}
+maths = {git = "https://github.com/Bowarc/Crates.git", package = "maths"}

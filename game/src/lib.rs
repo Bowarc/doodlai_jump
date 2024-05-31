@@ -8,7 +8,6 @@ pub mod player;
 
 const PLATFORM_LIMIT: u32 = 5;
 
-
 pub struct Game {
     // fk getters and setters
     pub enemies: Vec<Enemy>,
@@ -22,9 +21,15 @@ impl Game {
     pub fn new() -> Self {
         let mut platforms = Vec::new();
 
-        for i in 1..PLATFORM_LIMIT {
-            let size = maths::Vec2::new(platform::PLATFORM_BASE_WIDTH, platform::PLATFORM_BASE_HEIGHT);
-            let pos = maths::Point::new(random::get_inc(150., 540. - 150.), ((960 / PLATFORM_LIMIT) * i) as f64);
+        for i in 1..=PLATFORM_LIMIT {
+            let size = maths::Vec2::new(
+                platform::PLATFORM_BASE_WIDTH,
+                platform::PLATFORM_BASE_HEIGHT,
+            );
+            let pos = maths::Point::new(
+                random::get_inc(platform::PLATFORM_BASE_WIDTH, 540. - platform::PLATFORM_BASE_WIDTH),
+                ((960 / PLATFORM_LIMIT) * i) as f64,
+            );
 
             platforms.push(Platform::new(maths::Rect::new_from_center(pos, size, 0.)));
         }
@@ -39,12 +44,14 @@ impl Game {
     }
 
     pub fn update(&mut self, dt: f64) {
-        if self.lost{
+        if self.lost {
             return;
         }
+        assert_eq!(self.platforms.len(), PLATFORM_LIMIT as usize);
+
         // remove platforms
-        if self.player.rect.center().y - self.scroll as f64 - 960. > 0.{
-            println!("Failled");
+        if self.player.rect.center().y - self.scroll as f64 - 960. > 0. {
+            // println!("Failled");
             self.lost = true;
         }
 
@@ -56,8 +63,11 @@ impl Game {
         // create platforms (remove platfoms first to not iter over newly created platforms)
 
         while (self.platforms.len() as u32) < PLATFORM_LIMIT {
-            let pos = maths::Point::new(random::get_inc(150., 540. - 150.), self.scroll as f64 );
-            let size = maths::Vec2::new(platform::PLATFORM_BASE_WIDTH, platform::PLATFORM_BASE_HEIGHT);
+            let pos = maths::Point::new(random::get_inc(150., 540. - 150.), self.scroll as f64);
+            let size = maths::Vec2::new(
+                platform::PLATFORM_BASE_WIDTH,
+                platform::PLATFORM_BASE_HEIGHT,
+            );
 
             let rect = maths::Rect::new_from_center(pos, size, 0.);
 
@@ -66,7 +76,7 @@ impl Game {
 
         // update player
 
-        self.player.update(&self.platforms,dt);
+        self.player.update(&self.platforms, dt);
 
         // update 'camera'
         // let t = 20.0 * dt;
@@ -75,6 +85,8 @@ impl Game {
         if new_scroll < self.scroll {
             self.scroll = new_scroll;
         }
+
+        // println!("{}", self.score());
     }
 
     pub fn player_move_left(&mut self) {
@@ -86,4 +98,8 @@ impl Game {
     }
 
     pub fn player_shoot(&mut self) {}
+
+    pub fn score(&self) -> f32 {
+        return -self.scroll as f32;
+    }
 }

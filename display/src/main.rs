@@ -13,7 +13,7 @@ mod render;
 mod ui;
 mod utils;
 
-struct Chess {
+struct Display {
     cfg: config::Config,
     renderer: render::Renderer,
     asset_mgr: assets::AssetManager,
@@ -21,9 +21,11 @@ struct Chess {
     gui_menu: gui::Gui,
     global_ui: ui::UiManager,
     game: game::Game,
+    nn: neat::NeuralNetwork<24, 3>
+
 }
 
-impl Chess {
+impl Display {
     fn new(ctx: &mut ggez::Context, mut cfg: config::Config) -> ggez::GameResult<Self> {
         let renderer = render::Renderer::new();
 
@@ -117,11 +119,15 @@ impl Chess {
             gui_menu,
             global_ui,
             game: game::Game::new(),
+            nn: {
+                let topology: neat::NeuralNetworkTopology<24, 3> = serde_json::from_str::<neat::NNTSerde<24, 3>>(include_str!("./nnt.json")).unwrap().into();
+                (&topology).into()
+            }
         })
     }
 }
 
-impl ggez::event::EventHandler for Chess {
+impl ggez::event::EventHandler for Display {
     /// Called upon each logic update to the game.
     /// This should be where the game's logic takes place.
     fn update(&mut self, ctx: &mut ggez::Context) -> ggez::GameResult {
@@ -134,11 +140,57 @@ impl ggez::event::EventHandler for Chess {
         self.game.update(dt);
 
         // game inputs
-        if input::pressed(ctx, input::Input::KeyboardQ){
-            self.game.player_move_left()
-        }else if input::pressed(ctx, input::Input::KeyboardD){
-            self.game.player_move_right()
+        // if input::pressed(ctx, input::Input::KeyboardQ){
+        //     self.game.player_move_left()
+        // }else if input::pressed(ctx, input::Input::KeyboardD){
+        //     self.game.player_move_right()
+        // }
+
+        // network inputs
+        {
+            let mut inputs = Vec::new();
+
+            let rect_to_vec = |rect: &maths::Rect| -> [f32; 4] {
+                [
+                    rect.center().x as f32,
+                    rect.center().y as f32,
+                    rect.width() as f32,
+                    rect.height() as f32,
+                ]
+            };
+
+            inputs.extend(rect_to_vec(&self.game.player.rect));
+
+            // ordered by distance to player
+            let closest_platforms = {
+                let mut temp = self.game.platforms.clone();
+                temp.sort_unstable_by_key(|platfrom| {
+                    maths::get_distance(platfrom.rect.center(), self.game.player.rect.center()) as i32
+                });
+                temp
+            };
+
+            for platform in closest_platforms {
+                inputs.extend(rect_to_vec(&platform.rect));
+            }
+
+            assert_eq!(inputs.len(), 24);
+
+            let output =self.nn.predict(inputs.try_into().unwrap());
+            println!("outputed: {output:?}");
+            let action =
+                neat::MaxIndex::max_index(output.iter());
+
+            match action {
+                0 => (), // No action
+                1 => self.game.player_move_left(),
+                2 => self.game.player_move_right(),
+                _ => (),
+            }
+
         }
+
+
 
 
         self.gui_menu.update(ctx, &mut self.cfg)?;
@@ -440,7 +492,7 @@ fn main() -> ggez::GameResult {
         .resources_dir_name("resources\\external\\")
         .window_setup(
             ggez::conf::WindowSetup::default()
-                .title("Chess game")
+                .title("Display game")
                 .samples(config.window.samples)
                 .vsync(config.window.v_sync)
                 // .icon("/icon/logoV1.png")// .icon(iconpath.as_str()), // .icon("/Python.ico"),
@@ -458,7 +510,7 @@ fn main() -> ggez::GameResult {
 
     let (mut ctx, event_loop) = cb.build()?;
 
-    let game = Chess::new(&mut ctx, config)?;
+    let game = Display::new(&mut ctx, config)?;
 
     ggez::event::run(ctx, event_loop, game);
 }
