@@ -150,25 +150,30 @@ impl ggez::event::EventHandler for Display {
         {
             let mut inputs = Vec::new();
 
-            let rect_to_vec = |rect: &maths::Rect| -> [f32; 4] {
+            let rect_to_vec = |rect: &maths::Rect| -> [f32; 2] {
                 [
                     rect.center().x as f32,
                     rect.center().y as f32,
-                    rect.width() as f32,
-                    rect.height() as f32,
+                    // rect.width() as f32,
+                    // rect.height() as f32,
                 ]
             };
 
             inputs.extend(rect_to_vec(&self.game.player.rect));
 
             // ordered by distance to player
+            let closest_platforms = {
+                let mut temp = self.game.platforms.clone();
+                temp.sort_unstable_by_key(|platfrom| {
+                    maths::get_distance(platfrom.rect.center(), self.game.player.rect.center()) as i32
+                });
+                temp
+            };
 
-
-            for platform in self.game.platforms.iter() {
+            for platform in closest_platforms {
                 inputs.extend(rect_to_vec(&platform.rect));
             }
 
-            assert_eq!(inputs.len(), 24);
 
             let output =self.nn.predict(inputs.try_into().unwrap());
             println!("outputed: {output:?}");
@@ -183,8 +188,6 @@ impl ggez::event::EventHandler for Display {
             }
 
         }
-
-
 
 
         self.gui_menu.update(ctx, &mut self.cfg)?;

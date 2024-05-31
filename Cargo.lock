@@ -2354,6 +2354,7 @@ dependencies = [
  "maths",
  "neat",
  "rand",
+ "rayon",
  "serde_json",
  "thiserror",
  "time",

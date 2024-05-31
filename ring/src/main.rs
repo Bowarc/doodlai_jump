@@ -1,4 +1,6 @@
 use neat::GenerateRandomCollection;
+use rayon::iter::ParallelIterator;
+use rayon::iter::IntoParallelRefIterator;
 use std::io::Write as _;
 
 #[macro_use]
@@ -6,11 +8,11 @@ extern crate log;
 mod agent;
 mod utils;
 
-const NB_GAMES: usize = 20;
-const GAME_TIME_S: usize = 60; // Nb of secconds we let the ai play the game before registering their scrore
-const GAME_DT: f64 = 0.0166;
-const NB_GENERATIONS: usize = 15;
-const NB_GENOME_PER_GEN: usize = 1000;
+const NB_GAMES: usize = 5;
+const GAME_TIME_S: usize = 30; // Nb of secconds we let the ai play the game before registering their scrore
+const GAME_DT: f64 = 0.05; // 0.0166
+const NB_GENERATIONS: usize = 600;
+const NB_GENOME_PER_GEN: usize = 10;
 
 static mut LOADED_NNT: Option<neat::NeuralNetworkTopology<{ agent::IN }, { agent::OUT }>> = None;
 
@@ -19,19 +21,18 @@ fn fitness(dna: &agent::DNA) -> f32 {
 
     let mut fitness = 0.;
 
-    let mut rng = rand::thread_rng();
 
     (0..NB_GAMES)
-        .map(|_| play_game(&agent, &mut rng))
+        .map(|_| play_game(&agent))
         .sum::<f32>()
         / NB_GAMES as f32
 }
 
-fn play_game(agent: &agent::Agent, rng: &mut rand::rngs::ThreadRng) -> f32 {
+fn play_game(agent: &agent::Agent) -> f32 {
     let mut game = game::Game::new();
 
     // loop for the number of frames we want to play, should be enough frames to play 100s at 60fps
-    for i in 0..((1. / GAME_DT) * GAME_TIME_S as f64) as usize {
+    for _ in 0..((1. / GAME_DT) * GAME_TIME_S as f64) as usize {
         if game.lost {
             break;
         }
@@ -50,13 +51,13 @@ fn play_game(agent: &agent::Agent, rng: &mut rand::rngs::ThreadRng) -> f32 {
         inputs.extend(rect_to_vec(&game.player.rect));
 
         // ordered by distance to player
-        let closest_platforms = {
-            let mut temp = game.platforms.clone();
-            temp.sort_unstable_by_key(|platfrom| {
-                maths::get_distance(platfrom.rect.center(), game.player.rect.center()) as i32
-            });
-            temp
-        };
+        // let closest_platforms = {
+        //     let mut temp = game.platforms.clone();
+        //     temp.sort_unstable_by_key(|platfrom| {
+        //         maths::get_distance(platfrom.rect.center(), game.player.rect.center()) as i32
+        //     });
+        //     temp
+        // };
 
         for platform in game.platforms.iter() {
             inputs.extend(rect_to_vec(&platform.rect));
@@ -76,10 +77,6 @@ fn play_game(agent: &agent::Agent, rng: &mut rand::rngs::ThreadRng) -> f32 {
     }
 
     game.score()
-}
-
-fn write_to_file(){
-
 }
 
 fn main() {
@@ -110,7 +107,6 @@ fn main() {
 
     for i in 0..NB_GENERATIONS {
         if !running.load(std::sync::atomic::Ordering::SeqCst) {
-            info!("Exit requested");
             break;
         }
         debug!(
@@ -119,19 +115,20 @@ fn main() {
             NB_GENERATIONS,
             stopwatch.read()
         );
-
-        sim.next_generation();
         let data = sim.genomes.iter().map(|dna| format!("{dna:?}\n")).collect::<String>();
         std::fs::File::create("./nn.backup").unwrap().write_all(data.as_bytes()).unwrap();
+
+        sim.next_generation();
+
     }
     debug!("Generation done, parsing outputs");
 
     let mut fits = sim
         .genomes
-        .iter()
+        .par_iter()
         .map(|dna| (dna, fitness(dna)))
         .collect::<Vec<_>>();
-    fits.sort_by(|(dnaa, fita), (dnab, fitb)| fitb.partial_cmp(&fita).unwrap());
+    fits.sort_by(|(_dnaa, fita), (_dnab, fitb)| fitb.partial_cmp(&fita).unwrap());
 
     debug!(
         "Max score: {}\nMin score: {}",
@@ -142,6 +139,7 @@ fn main() {
     {
         let intermediate = neat::NNTSerde::from(&fits[0].0.network);
         let serialized = serde_json::to_string(&intermediate).unwrap();
+        std::fs::File::create("./nnt.json").unwrap().write_all(serialized.as_bytes()).unwrap();
         println!("\n{}", serialized);
     }
 
