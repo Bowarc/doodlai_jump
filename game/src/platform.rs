@@ -1,12 +1,24 @@
+pub const PLATFORM_BASE_WIDTH: f64 = 100.;
+pub const PLATFORM_BASE_HEIGHT: f64 = 20.;
+
+
+
+pub enum PlatformType{
+
+}
+
+
+
+
 pub struct Platform{
     pub rect: maths::Rect
 }
 
 
 impl Platform{
-    pub fn new(pos: impl Into<maths::Vec2>) -> Self{
+    pub fn new(rect: impl Into<maths::Rect>) -> Self{
         Self{
-            rect: maths::Rect::new_from_center(pos, (100., 20.), 0.)
+            rect: rect.into()
         }
     }
 }

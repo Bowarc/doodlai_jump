@@ -8,12 +8,14 @@ pub mod player;
 
 const PLATFORM_LIMIT: u32 = 5;
 
+
 pub struct Game {
     // fk getters and setters
     pub enemies: Vec<Enemy>,
     pub platforms: Vec<Platform>,
     pub player: Player,
     pub scroll: i32,
+    pub lost: bool,
 }
 
 impl Game {
@@ -21,9 +23,10 @@ impl Game {
         let mut platforms = Vec::new();
 
         for i in 1..PLATFORM_LIMIT {
-            let x = random::get_inc(150., 540. - 150.);
-            let y = (960 / PLATFORM_LIMIT) * i;
-            platforms.push(Platform::new((x, y as f64)));
+            let size = maths::Vec2::new(platform::PLATFORM_BASE_WIDTH, platform::PLATFORM_BASE_HEIGHT);
+            let pos = maths::Point::new(random::get_inc(150., 540. - 150.), ((960 / PLATFORM_LIMIT) * i) as f64);
+
+            platforms.push(Platform::new(maths::Rect::new_from_center(pos, size, 0.)));
         }
 
         Self {
@@ -31,11 +34,19 @@ impl Game {
             platforms,
             player: Player::new(),
             scroll: 0,
+            lost: false,
         }
     }
 
     pub fn update(&mut self, dt: f64) {
+        if self.lost{
+            return;
+        }
         // remove platforms
+        if self.player.rect.center().y - self.scroll as f64 - 960. > 0.{
+            println!("Failled");
+            self.lost = true;
+        }
 
         self.platforms.retain(|platform| {
             // maths::get_distance(platform.rect.center(), self.player.rect.center()) < 1000.
@@ -45,15 +56,17 @@ impl Game {
         // create platforms (remove platfoms first to not iter over newly created platforms)
 
         while (self.platforms.len() as u32) < PLATFORM_LIMIT {
-            let x = random::get_inc(150., 540. - 150.);
-            let y = self.scroll as f64 + 0.;
+            let pos = maths::Point::new(random::get_inc(150., 540. - 150.), self.scroll as f64 );
+            let size = maths::Vec2::new(platform::PLATFORM_BASE_WIDTH, platform::PLATFORM_BASE_HEIGHT);
 
-            self.platforms.push(Platform::new((x, y)));
+            let rect = maths::Rect::new_from_center(pos, size, 0.);
+
+            self.platforms.push(Platform::new(rect));
         }
 
         // update player
 
-        self.player.update(dt, &self.platforms);
+        self.player.update(&self.platforms,dt);
 
         // update 'camera'
         // let t = 20.0 * dt;

@@ -13,15 +13,6 @@ opt-level = 3
 
 [workspace.dependencies]
 log = "0.4.20"
-ggez = "0.9.3"
-derivative = "2.2.0"
-serde = { version = "1.0.188", features = ["derive"] }
-hashbrown = "0.14.0"
-ron = "0.8.1"
-thiserror = "1.0.48"
-spin_sleep = "1.1.1"
 logger = {git = "https://github.com/Bowarc/Crates.git", package = "logger"}
 time = {git = "https://github.com/Bowarc/Crates.git", package = "time"}
 random = {git = "https://github.com/Bowarc/Crates.git", package = "random"}
-maths = {git = "https://github.com/Bowarc/Crates.git", package = "maths"}
-threading = {git = "https://github.com/Bowarc/Crates.git", package = "threading"}

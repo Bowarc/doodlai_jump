@@ -13,6 +13,6 @@ path = "src/main.rs"
 game = {path = "../game"}
 ctrlc = "3.4.1"
 log.workspace = true
-thiserror.workspace = true
+thiserror = "1.0.48"
 logger.workspace = true
 time.workspace = true
