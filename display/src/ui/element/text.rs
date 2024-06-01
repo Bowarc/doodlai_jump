@@ -135,8 +135,8 @@ impl Text {
         for bit in self.bits.iter() {
             match bit {
                 TextBit::Text { raw, color_opt } => {
-                    let mut f =
-                        ggez::graphics::TextFragment::new(raw.clone()).scale(target_size as f32 *10.);
+                    let mut f = ggez::graphics::TextFragment::new(raw.clone())
+                        .scale(target_size as f32 * 10.);
                     f.color = color_opt.map(|c| c.into());
                     global_text.add(f);
                 }

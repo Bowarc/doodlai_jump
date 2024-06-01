@@ -754,6 +754,7 @@ dependencies = [
  "maths",
  "neat",
  "random",
+ "ring",
  "ron",
  "rust-embed",
  "serde",
@@ -1553,7 +1554,7 @@ dependencies = [
 [[package]]
 name = "logger"
 version = "0.1.0"
-source = "git+https://github.com/Bowarc/Crates.git#00c44c577f039f4bc5e0e84772155264466944cb"
+source = "git+https://github.com/Bowarc/Crates.git#c8144797d000f67b09bd8bd2fab3d13f14cc6365"
 dependencies = [
  "chrono",
  "colored",
@@ -1635,7 +1636,7 @@ dependencies = [
 [[package]]
 name = "maths"
 version = "0.1.0"
-source = "git+https://github.com/Bowarc/Crates.git#00c44c577f039f4bc5e0e84772155264466944cb"
+source = "git+https://github.com/Bowarc/Crates.git#c8144797d000f67b09bd8bd2fab3d13f14cc6365"
 dependencies = [
  "ggez",
  "log",
@@ -1797,8 +1798,7 @@ dependencies = [
 [[package]]
 name = "neat"
 version = "0.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c05b5b056d152058706b1d403b55e698c2cac78167e2f4245e6646de9e76c488"
+source = "git+https://github.com/hypercodec/neat?branch=dev#1ca896b7599fc0fee8d6b38a520b8abe08871f7c"
 dependencies = [
  "bitflags 2.5.0",
  "genetic-rs",
@@ -2227,7 +2227,7 @@ dependencies = [
 [[package]]
 name = "random"
 version = "0.1.0"
-source = "git+https://github.com/Bowarc/Crates.git#00c44c577f039f4bc5e0e84772155264466944cb"
+source = "git+https://github.com/Bowarc/Crates.git#c8144797d000f67b09bd8bd2fab3d13f14cc6365"
 dependencies = [
  "rand",
 ]
@@ -2356,7 +2356,6 @@ dependencies = [
  "rand",
  "rayon",
  "serde_json",
- "thiserror",
  "time",
 ]
 
@@ -2772,7 +2771,7 @@ dependencies = [
 [[package]]
 name = "threading"
 version = "0.1.0"
-source = "git+https://github.com/Bowarc/Crates.git#00c44c577f039f4bc5e0e84772155264466944cb"
+source = "git+https://github.com/Bowarc/Crates.git#c8144797d000f67b09bd8bd2fab3d13f14cc6365"
 
 [[package]]
 name = "tiff"
@@ -2788,7 +2787,7 @@ dependencies = [
 [[package]]
 name = "time"
 version = "0.1.0"
-source = "git+https://github.com/Bowarc/Crates.git#00c44c577f039f4bc5e0e84772155264466944cb"
+source = "git+https://github.com/Bowarc/Crates.git#c8144797d000f67b09bd8bd2fab3d13f14cc6365"
 dependencies = [
  "derivative",
  "serde",

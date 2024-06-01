@@ -16,21 +16,14 @@ pub enum Anchor {
 
 impl Anchor {
     /// Computes and returns the center point of the element
-    pub fn compute(
-        &self,
-        drawable_size: maths::Point,
-        element_size: maths::Point,
-    ) -> maths::Point {
+    pub fn compute(&self, drawable_size: maths::Point, element_size: maths::Point) -> maths::Point {
         match self {
             Anchor::CenterCenter => drawable_size * 0.5,
             Anchor::Topleft => element_size * 0.5,
-            Anchor::TopCenter => {
-                maths::Point::new(drawable_size.x * 0.5, element_size.y * 0.5)
+            Anchor::TopCenter => maths::Point::new(drawable_size.x * 0.5, element_size.y * 0.5),
+            Anchor::TopRight => {
+                maths::Point::new(drawable_size.x - element_size.x * 0.5, element_size.y * 0.5)
             }
-            Anchor::TopRight => maths::Point::new(
-                drawable_size.x - element_size.x * 0.5,
-                element_size.y * 0.5,
-            ),
             Anchor::RightCenter => maths::Point::new(
                 drawable_size.x - element_size.x * 0.5,
                 drawable_size.y * 0.5,
@@ -40,13 +33,10 @@ impl Anchor {
                 drawable_size.x * 0.5,
                 drawable_size.y - element_size.y * 0.5,
             ),
-            Anchor::BotLeft => maths::Point::new(
-                element_size.x * 0.5,
-                drawable_size.y - element_size.y * 0.5,
-            ),
-            Anchor::LeftCenter => {
-                maths::Point::new(element_size.x * 0.5, drawable_size.y * 0.5)
+            Anchor::BotLeft => {
+                maths::Point::new(element_size.x * 0.5, drawable_size.y - element_size.y * 0.5)
             }
+            Anchor::LeftCenter => maths::Point::new(element_size.x * 0.5, drawable_size.y * 0.5),
         }
 
         // match self {

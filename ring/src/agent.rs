@@ -1,11 +1,8 @@
 use neat::{CrossoverReproduction, DivisionReproduction, RandomlyMutable};
 
-pub const IN: usize = 12;
-pub const OUT: usize = 3; // None, Left, right
-
 #[derive(PartialEq, Clone, Debug, DivisionReproduction, RandomlyMutable, CrossoverReproduction)]
 pub struct DNA {
-    pub network: neat::NeuralNetworkTopology<IN, OUT>,
+    pub network: neat::NeuralNetworkTopology<{ crate::AGENT_IN }, { crate::AGENT_OUT }>,
 }
 
 impl neat::Prunable for DNA {}
@@ -22,7 +19,7 @@ impl neat::GenerateRandom for DNA {
 
 #[derive(Debug)]
 pub struct Agent {
-    pub network: neat::NeuralNetwork<IN, OUT>,
+    pub network: neat::NeuralNetwork<{ crate::AGENT_IN }, { crate::AGENT_OUT }>,
 }
 
 impl From<&DNA> for Agent {

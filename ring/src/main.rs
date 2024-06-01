@@ -1,31 +1,21 @@
-use neat::GenerateRandomCollection;
-use rayon::iter::ParallelIterator;
-use rayon::iter::IntoParallelRefIterator;
+use neat::{GenerateRandomCollection, MaxIndex};
+use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+use ring::{
+    agent, AGENT_IN, AGENT_OUT, GAME_DT, GAME_TIME_S, NB_GAMES, NB_GENERATIONS, NB_GENOME_PER_GEN,
+};
 use std::io::Write as _;
 
 #[macro_use]
 extern crate log;
-mod agent;
+
 mod utils;
 
-const NB_GAMES: usize = 5;
-const GAME_TIME_S: usize = 30; // Nb of secconds we let the ai play the game before registering their scrore
-const GAME_DT: f64 = 0.05; // 0.0166
-const NB_GENERATIONS: usize = 600;
-const NB_GENOME_PER_GEN: usize = 10;
-
-static mut LOADED_NNT: Option<neat::NeuralNetworkTopology<{ agent::IN }, { agent::OUT }>> = None;
+static mut LOADED_NNT: Option<neat::NeuralNetworkTopology<{ AGENT_IN }, { AGENT_OUT }>> = None;
 
 fn fitness(dna: &agent::DNA) -> f32 {
     let agent = agent::Agent::from(dna);
 
-    let mut fitness = 0.;
-
-
-    (0..NB_GAMES)
-        .map(|_| play_game(&agent))
-        .sum::<f32>()
-        / NB_GAMES as f32
+    (0..NB_GAMES).map(|_| play_game(&agent)).sum::<f32>() / NB_GAMES as f32
 }
 
 fn play_game(agent: &agent::Agent) -> f32 {
@@ -37,36 +27,9 @@ fn play_game(agent: &agent::Agent) -> f32 {
             break;
         }
 
-        let mut inputs = Vec::new();
+        let output = agent.network.predict(ring::generate_inputs(&game));
 
-        let rect_to_vec = |rect: &maths::Rect| -> [f32; 2] {
-            [
-                rect.center().x as f32,
-                rect.center().y as f32,
-                // rect.width() as f32,
-                // rect.height() as f32,
-            ]
-        };
-
-        inputs.extend(rect_to_vec(&game.player.rect));
-
-        // ordered by distance to player
-        // let closest_platforms = {
-        //     let mut temp = game.platforms.clone();
-        //     temp.sort_unstable_by_key(|platfrom| {
-        //         maths::get_distance(platfrom.rect.center(), game.player.rect.center()) as i32
-        //     });
-        //     temp
-        // };
-
-        for platform in game.platforms.iter() {
-            inputs.extend(rect_to_vec(&platform.rect));
-        }
-
-        let action =
-            neat::MaxIndex::max_index(agent.network.predict(inputs.try_into().unwrap()).iter());
-
-        match action {
+        match output.iter().max_index() {
             0 => (), // No action
             1 => game.player_move_left(),
             2 => game.player_move_right(),
@@ -77,6 +40,30 @@ fn play_game(agent: &agent::Agent) -> f32 {
     }
 
     game.score()
+}
+
+// F: FitnessFn<G> + Send + Sync,
+// NG: NextgenFn<G> + Send + Sync,
+// G: Sized + Send,
+
+fn sort_genomes(
+    sim: &neat::GeneticSim<
+        impl Fn(&agent::DNA) -> f32 + Send + Sync,
+        impl Fn(Vec<(agent::DNA, f32)>) -> Vec<agent::DNA> + Send + Sync,
+        agent::DNA,
+    >,
+) -> Vec<(&agent::DNA, f32)> {
+    // Iter with rayon
+
+    let mut genomes = sim
+        .genomes
+        .par_iter()
+        .map(|dna| (dna, fitness(dna)))
+        .collect::<Vec<(&agent::DNA, f32)>>();
+
+    genomes.sort_unstable_by_key(|(_dna, fitness)| -fitness as i32);
+
+    genomes
 }
 
 fn main() {
@@ -109,37 +96,63 @@ fn main() {
         if !running.load(std::sync::atomic::Ordering::SeqCst) {
             break;
         }
-        debug!(
-            "Generation {}/{}, {:?} since start",
-            i + 1,
-            NB_GENERATIONS,
-            stopwatch.read()
-        );
-        let data = sim.genomes.iter().map(|dna| format!("{dna:?}\n")).collect::<String>();
-        std::fs::File::create("./nn.backup").unwrap().write_all(data.as_bytes()).unwrap();
+        debug!("Generation {}/{}", i + 1, NB_GENERATIONS,);
+        let stopwatch = time::Stopwatch::start_new();
+
+        {
+            let data = sim
+                .genomes
+                .iter()
+                .map(|dna| format!("{dna:?}\n"))
+                .collect::<String>();
+            std::fs::File::create("./sim.backup")
+                .unwrap()
+                .write_all(data.as_bytes())
+                .unwrap();
+        }
 
         sim.next_generation();
 
+        let (sorted_genome, sort_duration) = time::timeit(|| sort_genomes(&sim));
+
+        let best = sorted_genome.first().unwrap();
+
+        println!(
+            "Gen {} done, took {}\nResults: {:.0}/{:.0}/{:.0}. sorted in {}.",
+            i + 1,
+            time::format(stopwatch.read(), 1),
+            best.1,
+            sorted_genome.get(NB_GENOME_PER_GEN / 2).unwrap().1,
+            sorted_genome.last().unwrap().1,
+            time::format(sort_duration, 1)
+        );
+
+        std::fs::File::create(format!("./generations/gen{}_score{:.0}.json", i, best.1))
+            .unwrap()
+            .write_all(
+                serde_json::to_string(&neat::NNTSerde::from(&best.0.network))
+                    .unwrap()
+                    .as_bytes(),
+            )
+            .unwrap();
     }
     debug!("Generation done, parsing outputs");
 
-    let mut fits = sim
-        .genomes
-        .par_iter()
-        .map(|dna| (dna, fitness(dna)))
-        .collect::<Vec<_>>();
-    fits.sort_by(|(_dnaa, fita), (_dnab, fitb)| fitb.partial_cmp(&fita).unwrap());
+    let genomes = sort_genomes(&sim);
 
     debug!(
         "Max score: {}\nMin score: {}",
-        &fits[0].1,
-        &fits[fits.len() - 1].1
+        &genomes.first().unwrap().1,
+        &genomes.last().unwrap().1
     );
 
     {
-        let intermediate = neat::NNTSerde::from(&fits[0].0.network);
+        let intermediate = neat::NNTSerde::from(&genomes.first().unwrap().0.network);
         let serialized = serde_json::to_string(&intermediate).unwrap();
-        std::fs::File::create("./nnt.json").unwrap().write_all(serialized.as_bytes()).unwrap();
+        std::fs::File::create("./nnt.json")
+            .unwrap()
+            .write_all(serialized.as_bytes())
+            .unwrap();
         println!("\n{}", serialized);
     }
 
@@ -148,4 +161,3 @@ fn main() {
         time::format(stopwatch.read(), 3)
     );
 }
-

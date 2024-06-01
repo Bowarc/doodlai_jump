@@ -16,7 +16,11 @@ pub struct Player {
 impl Player {
     pub fn new() -> Self {
         Self {
-            rect: maths::Rect::new_from_center((540. / 2., 960. / 2.), (PLAYER_SIZE, PLAYER_SIZE), 0.),
+            rect: maths::Rect::new_from_center(
+                (crate::GAME_WIDTH / 2., crate::GAME_HEIGHT / 2.),
+                (PLAYER_SIZE, PLAYER_SIZE),
+                0.,
+            ),
             velocity: maths::Vec2::ZERO,
             current_direction: None,
             ignore_collisions_tag: false,
@@ -37,7 +41,6 @@ impl Player {
 
         self.update_collision(platforms);
 
-
         // println!("{}", self.rect.center());
 
         self.velocity.y += GRAVITY * dt;
@@ -45,12 +48,12 @@ impl Player {
 
         self.current_direction = None;
 
-        if self.rect.center().x > 540. {
+        if self.rect.center().x > crate::GAME_WIDTH {
             self.rect
                 .set_center(maths::Vec2::new(0., self.rect.center().y))
         } else if self.rect.center().x < 0. {
             self.rect
-                .set_center(maths::Vec2::new(540., self.rect.center().y))
+                .set_center(maths::Vec2::new(crate::GAME_WIDTH, self.rect.center().y))
         }
     }
 
@@ -61,11 +64,11 @@ impl Player {
             if !maths::collision::rect_rect_no_r(self.rect, platform.rect) {
                 continue;
             }
-			collided_this_frame = true;
-			// If player entered the platform from below, ingore all collision until out
-			if self.ignore_collisions_tag{
-				break;
-			}
+            collided_this_frame = true;
+            // If player entered the platform from below, ingore all collision until out
+            if self.ignore_collisions_tag {
+                break;
+            }
 
             if self.rect.center().x < platform.rect.aa_topleft().x && self.velocity.x > 0. {
                 // println!("Collsion from the left");
@@ -75,7 +78,6 @@ impl Player {
                 //     platform.rect.aa_topleft().x - self.rect.width() / 2. - 1.,
                 //     self.rect.center().y,
                 // ));
-
             } else if self.rect.center().x > platform.rect.aa_topright().x && self.velocity.x < 0. {
                 // println!("Collsion from the right");
                 self.ignore_collisions_tag = true;
@@ -84,7 +86,6 @@ impl Player {
                 //     platform.rect.aa_topright().x + self.rect.width() / 2.,
                 //     self.rect.center().y,
                 // ));
-
             } else if self.velocity.y > 0. && !self.ignore_collisions_tag {
                 // println!("Collision from above");
 

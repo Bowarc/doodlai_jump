@@ -21,18 +21,11 @@ impl Position {
         }
     }
 
-    pub fn compute(
-        &self,
-        ctx: &mut ggez::Context,
-        element_size: maths::Point,
-    ) -> maths::Point {
+    pub fn compute(&self, ctx: &mut ggez::Context, element_size: maths::Point) -> maths::Point {
         match self {
-            Position::Value(pt) => {
-                maths::Point::new(pt.x().compute(ctx), pt.y().compute(ctx))
-            }
+            Position::Value(pt) => maths::Point::new(pt.x().compute(ctx), pt.y().compute(ctx)),
             Position::Anchor { anchor, offset } => {
-                let offset =
-                    maths::Point::new(offset.x().compute(ctx), offset.y().compute(ctx));
+                let offset = maths::Point::new(offset.x().compute(ctx), offset.y().compute(ctx));
                 let drawable_size: maths::Point = ctx.gfx.drawable_size().into();
 
                 let anchor_position = anchor.compute(drawable_size, element_size);

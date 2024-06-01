@@ -15,5 +15,5 @@ pub enum SpriteId {
     Mob0,
     Mob1,
     Mob2Left,
-    Mob2Right
+    Mob2Right,
 }

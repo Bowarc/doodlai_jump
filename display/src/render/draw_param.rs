@@ -47,10 +47,7 @@ impl DrawParam {
         self.size = Some(rect.size());
         self
     }
-    pub fn to_ggez_scaled(
-        self,
-        image_size: impl Into<maths::Point>,
-    ) -> ggez::graphics::DrawParam {
+    pub fn to_ggez_scaled(self, image_size: impl Into<maths::Point>) -> ggez::graphics::DrawParam {
         if let Some(size) = self.size {
             let image_size = image_size.into();
             ggez::graphics::DrawParam::new()

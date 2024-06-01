@@ -8,6 +8,9 @@ pub mod player;
 
 const PLATFORM_LIMIT: u32 = 5;
 
+pub const GAME_WIDTH: f64 = 540.;
+pub const GAME_HEIGHT: f64 = 960.;
+
 pub struct Game {
     // fk getters and setters
     pub enemies: Vec<Enemy>,
@@ -27,8 +30,11 @@ impl Game {
                 platform::PLATFORM_BASE_HEIGHT,
             );
             let pos = maths::Point::new(
-                random::get_inc(platform::PLATFORM_BASE_WIDTH, 540. - platform::PLATFORM_BASE_WIDTH),
-                ((960 / PLATFORM_LIMIT) * i) as f64,
+                random::get_inc(
+                    platform::PLATFORM_BASE_WIDTH,
+                    GAME_WIDTH - platform::PLATFORM_BASE_WIDTH,
+                ),
+                ((GAME_HEIGHT as u32 / PLATFORM_LIMIT) * i) as f64,
             );
 
             platforms.push(Platform::new(maths::Rect::new_from_center(pos, size, 0.)));
@@ -50,20 +56,26 @@ impl Game {
         assert_eq!(self.platforms.len(), PLATFORM_LIMIT as usize);
 
         // remove platforms
-        if self.player.rect.center().y - self.scroll as f64 - 960. > 0. {
+        if self.player.rect.center().y - self.scroll as f64 - GAME_HEIGHT > 0. {
             // println!("Failled");
             self.lost = true;
         }
 
         self.platforms.retain(|platform| {
             // maths::get_distance(platform.rect.center(), self.player.rect.center()) < 1000.
-            platform.rect.center().y - (self.scroll as f64) < 960.
+            platform.rect.center().y - (self.scroll as f64) < GAME_HEIGHT
         });
 
         // create platforms (remove platfoms first to not iter over newly created platforms)
 
         while (self.platforms.len() as u32) < PLATFORM_LIMIT {
-            let pos = maths::Point::new(random::get_inc(150., 540. - 150.), self.scroll as f64);
+            let pos = maths::Point::new(
+                random::get_inc(
+                    platform::PLATFORM_BASE_WIDTH / 2.,
+                    GAME_WIDTH - platform::PLATFORM_BASE_WIDTH / 2.,
+                ),
+                self.scroll as f64,
+            );
             let size = maths::Vec2::new(
                 platform::PLATFORM_BASE_WIDTH,
                 platform::PLATFORM_BASE_HEIGHT,
@@ -80,8 +92,8 @@ impl Game {
 
         // update 'camera'
         // let t = 20.0 * dt;
-        // self.scroll = (self.scroll as f64 * (1. - t) + self.player.rect.center().y - (960. / 2.) * t) as u32;
-        let new_scroll = (self.player.rect.center().y - (960. / 2.)) as i32;
+        // self.scroll = (self.scroll as f64 * (1. - t) + self.player.rect.center().y - (GAME_HEIGHT / 2.) * t) as u32;
+        let new_scroll = (self.player.rect.center().y - (GAME_HEIGHT / 2.)) as i32;
         if new_scroll < self.scroll {
             self.scroll = new_scroll;
         }

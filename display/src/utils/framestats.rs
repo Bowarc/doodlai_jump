@@ -58,7 +58,6 @@ impl FrameStats {
         render_request: &mut crate::render::RenderRequest,
         in_loading_requests: &[crate::assets::loader::Request],
     ) -> ggez::GameResult {
-
         let time_frag = self.draw_time_measurements(ctx);
         let render_frag = self.draw_render_stats(in_loading_requests);
 
@@ -127,5 +126,4 @@ impl FrameStats {
         ))
         .color(ggez::graphics::Color::from_rgb(0, 150, 150))
     }
-
 }

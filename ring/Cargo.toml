@@ -5,6 +5,11 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[lib]
+name = "ring"
+path = "src/lib.rs"
+crate-type = ["rlib"]
+
 [[bin]]
 name = "ring"
 path = "src/main.rs"
@@ -13,11 +18,10 @@ path = "src/main.rs"
 game = {path = "../game"}
 ctrlc = "3.4.1"
 log.workspace = true
-thiserror = "1.0.48"
 logger.workspace = true
 time.workspace = true
-neat = { version = "0.5.1", features = ["crossover", "rayon", "serde"] }
 rand = "0.8.5"
 maths.workspace =true
-serde_json = "1.0.117"
+serde_json.workspace = true
 rayon = "1.8.1"
+neat.workspace = true

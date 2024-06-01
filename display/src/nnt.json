@@ -1,122 +1,186 @@
 {
     "input_layer": [{
         "inputs": [],
-        "bias": 0.24569881,
+        "bias": 0.29041845,
         "activation": "linear_activation"
     }, {
         "inputs": [],
-        "bias": 0.7573678,
+        "bias": 0.6454193,
         "activation": "linear_activation"
     }, {
         "inputs": [],
-        "bias": 0.9759858,
+        "bias": 0.3046223,
         "activation": "linear_activation"
     }, {
         "inputs": [],
-        "bias": 0.679264,
+        "bias": 0.78114575,
         "activation": "linear_activation"
     }, {
         "inputs": [],
-        "bias": 0.6861271,
+        "bias": 0.7748339,
         "activation": "linear_activation"
     }, {
         "inputs": [],
-        "bias": 0.11655873,
+        "bias": 0.83054376,
         "activation": "linear_activation"
     }, {
         "inputs": [],
-        "bias": 0.61119,
+        "bias": 0.798563,
         "activation": "linear_activation"
     }, {
         "inputs": [],
-        "bias": 0.98570645,
+        "bias": 0.71043205,
         "activation": "linear_activation"
     }, {
         "inputs": [],
-        "bias": 0.7882543,
+        "bias": 0.8673343,
         "activation": "linear_activation"
     }, {
         "inputs": [],
-        "bias": 0.015190005,
+        "bias": 0.7092542,
         "activation": "linear_activation"
     }, {
         "inputs": [],
-        "bias": 0.89306235,
+        "bias": 0.20210831,
         "activation": "linear_activation"
     }, {
         "inputs": [],
-        "bias": 0.64013094,
+        "bias": 0.41028106,
+        "activation": "linear_activation"
+    }, {
+        "inputs": [],
+        "bias": 0.9969142,
+        "activation": "linear_activation"
+    }, {
+        "inputs": [],
+        "bias": 0.34807414,
+        "activation": "linear_activation"
+    }, {
+        "inputs": [],
+        "bias": 0.25123596,
+        "activation": "linear_activation"
+    }, {
+        "inputs": [],
+        "bias": 0.817015,
+        "activation": "linear_activation"
+    }, {
+        "inputs": [],
+        "bias": 0.5084072,
+        "activation": "linear_activation"
+    }, {
+        "inputs": [],
+        "bias": 0.098725855,
+        "activation": "linear_activation"
+    }, {
+        "inputs": [],
+        "bias": 0.8113055,
+        "activation": "linear_activation"
+    }, {
+        "inputs": [],
+        "bias": 0.71133983,
+        "activation": "linear_activation"
+    }, {
+        "inputs": [],
+        "bias": 0.7669221,
+        "activation": "linear_activation"
+    }, {
+        "inputs": [],
+        "bias": 0.4021507,
+        "activation": "linear_activation"
+    }, {
+        "inputs": [],
+        "bias": 0.20778024,
+        "activation": "linear_activation"
+    }, {
+        "inputs": [],
+        "bias": 0.3235405,
+        "activation": "linear_activation"
+    }, {
+        "inputs": [],
+        "bias": 0.63369673,
         "activation": "linear_activation"
     }],
     "hidden_layers": [],
     "output_layer": [{
         "inputs": [
             [{
-                "Input": 2
-            }, -0.76825285],
-            [{
                 "Input": 0
-            }, 0.8696084],
+            }, -0.7410198],
             [{
-                "Input": 9
-            }, -0.14029694]
+                "Input": 11
+            }, 0.8720107],
+            [{
+                "Input": 19
+            }, 0.07501125],
+            [{
+                "Input": 15
+            }, 0.8562515],
+            [{
+                "Input": 4
+            }, 0.13108206],
+            [{
+                "Input": 23
+            }, 0.17877221],
+            [{
+                "Input": 22
+            }, 0.8485998]
         ],
-        "bias": 0.38138157,
+        "bias": 0.68728346,
         "activation": "sigmoid"
     }, {
         "inputs": [
-            [{
-                "Input": 8
-            }, -0.41421723],
-            [{
-                "Input": 6
-            }, -0.48755145],
-            [{
-                "Input": 5
-            }, -0.8939409],
-            [{
-                "Input": 3
-            }, 0.31956553],
             [{
                 "Input": 1
-            }, -0.51478887],
-            [{
-                "Input": 11
-            }, -0.9269731],
+            }, 0.37006634],
             [{
                 "Input": 0
-            }, -0.9262216],
-            [{
-                "Input": 0
-            }, 0.48514986],
-            [{
-                "Input": 11
-            }, 0.005863428],
-            [{
-                "Input": 0
-            }, 0.8377595]
+            }, 0.30062157]
         ],
-        "bias": 0.9275579,
+        "bias": 0.10082641,
         "activation": "sigmoid"
     }, {
         "inputs": [
             [{
-                "Input": 9
-            }, 0.0947752],
+                "Input": 23
+            }, 0.6683583],
             [{
-                "Input": 3
-            }, 0.28315902],
+                "Input": 4
+            }, -0.49069214],
             [{
-                "Input": 0
-            }, -0.8062],
+                "Input": 15
+            }, 0.6299138],
             [{
-                "Input": 2
-            }, 0.43361044],
+                "Input": 20
+            }, -0.11291337],
             [{
-                "Input": 9
-            }, -0.59085584]
+                "Input": 12
+            }, -0.6286888],
+            [{
+                "Input": 24
+            }, -0.5718645],
+            [{
+                "Input": 16
+            }, -0.89815426],
+            [{
+                "Input": 12
+            }, 0.25928664],
+            [{
+                "Input": 6
+            }, -0.39710903],
+            [{
+                "Input": 7
+            }, -0.7143612],
+            [{
+                "Input": 6
+            }, -0.5311549],
+            [{
+                "Input": 13
+            }, -0.78051686],
+            [{
+                "Input": 21
+            }, 0.22993702]
         ],
-        "bias": 0.8455734,
+        "bias": 0.65019035,
         "activation": "sigmoid"
     }],
     "mutation_rate": 0.01,

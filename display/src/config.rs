@@ -1,7 +1,6 @@
 use crate::assets;
 // config file are in external fs
 
-
 const USER_CONFIG_FILE: assets::file::ConsPath = assets::file::ConsPath::new(
     assets::file::FileSystem::External,
     "config/globalConfig.ron",

@@ -21,8 +21,7 @@ struct Display {
     gui_menu: gui::Gui,
     global_ui: ui::UiManager,
     game: game::Game,
-    nn: neat::NeuralNetwork<12, 3>
-
+    nn: neat::NeuralNetwork<{ ring::AGENT_IN }, { ring::AGENT_OUT }>,
 }
 
 impl Display {
@@ -120,9 +119,14 @@ impl Display {
             global_ui,
             game: game::Game::new(),
             nn: {
-                let topology: neat::NeuralNetworkTopology<12, 3> = serde_json::from_str::<neat::NNTSerde<12, 3>>(include_str!("./nnt.json")).unwrap().into();
+                let topology: neat::NeuralNetworkTopology<{ ring::AGENT_IN }, { ring::AGENT_OUT }> =
+                    serde_json::from_str::<neat::NNTSerde<{ ring::AGENT_IN }, { ring::AGENT_OUT }>>(
+                        include_str!("./nnt.json"),
+                    )
+                    .unwrap()
+                    .into();
                 (&topology).into()
-            }
+            },
         })
     }
 }
@@ -148,47 +152,16 @@ impl ggez::event::EventHandler for Display {
 
         // network inputs
         {
-            let mut inputs = Vec::new();
+            let output = self.nn.predict(ring::generate_inputs(&self.game));
 
-            let rect_to_vec = |rect: &maths::Rect| -> [f32; 2] {
-                [
-                    rect.center().x as f32,
-                    rect.center().y as f32,
-                    // rect.width() as f32,
-                    // rect.height() as f32,
-                ]
-            };
-
-            inputs.extend(rect_to_vec(&self.game.player.rect));
-
-            // ordered by distance to player
-            let closest_platforms = {
-                let mut temp = self.game.platforms.clone();
-                temp.sort_unstable_by_key(|platfrom| {
-                    maths::get_distance(platfrom.rect.center(), self.game.player.rect.center()) as i32
-                });
-                temp
-            };
-
-            for platform in closest_platforms {
-                inputs.extend(rect_to_vec(&platform.rect));
-            }
-
-
-            let output =self.nn.predict(inputs.try_into().unwrap());
             println!("outputed: {output:?}");
-            let action =
-                neat::MaxIndex::max_index(output.iter());
-
-            match action {
+            match neat::MaxIndex::max_index(output.iter()) {
                 0 => (), // No action
                 1 => self.game.player_move_left(),
                 2 => self.game.player_move_right(),
                 _ => (),
             }
-
         }
-
 
         self.gui_menu.update(ctx, &mut self.cfg)?;
 
@@ -269,7 +242,6 @@ impl ggez::event::EventHandler for Display {
                 .size(self.game.player.rect.size()),
             render::Layer::Game,
         );
-
 
         let render_log = self.renderer.run(
             ctx,
