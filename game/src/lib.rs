@@ -51,6 +51,7 @@ impl Game {
 
     pub fn update(&mut self, dt: f64) {
         if self.lost {
+            println!("{}", self.score());
             return;
         }
         assert_eq!(self.platforms.len(), PLATFORM_LIMIT as usize);

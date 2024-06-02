@@ -4,10 +4,7 @@ use plotters::{
     style::{Color as _, IntoFont as _},
 };
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
-use ring::{
-    agent, AGENT_IN, AGENT_OUT, GAME_DT, GAME_TIME_S, MUTATION_PASSES, MUTATION_RATE, NB_GAMES,
-    NB_GENERATIONS, NB_GENOME_PER_GEN,
-};
+use ring::{agent, GAME_DELTA_TIME, GAME_FPS, GAME_TIME_S, NB_GAMES, NB_GENERATIONS, NB_GENOME_PER_GEN};
 use std::io::Write as _;
 
 #[macro_use]
@@ -15,7 +12,7 @@ extern crate log;
 
 mod utils;
 
-static mut LOADED_NNT: Option<neat::NeuralNetworkTopology<{ AGENT_IN }, { AGENT_OUT }>> = None;
+// static mut LOADED_NNT: Option<neat::NeuralNetworkTopology<{ AGENT_IN }, { AGENT_OUT }>> = None;
 
 fn fitness(dna: &agent::DNA) -> f32 {
     let agent = agent::Agent::from(dna);
@@ -27,11 +24,7 @@ fn play_game(agent: &agent::Agent) -> f32 {
     let mut game = game::Game::new();
 
     // loop for the number of frames we want to play, should be enough frames to play 100s at 60fps
-    for _ in 0..((1. / GAME_DT) * GAME_TIME_S as f64) as usize {
-        if game.lost {
-            break;
-        }
-
+    for _ in 0..(GAME_FPS * GAME_TIME_S) {
         let output = agent.network.predict(ring::generate_inputs(&game));
 
         match output.iter().max_index() {
@@ -41,15 +34,14 @@ fn play_game(agent: &agent::Agent) -> f32 {
             _ => (),
         }
 
-        game.update(GAME_DT);
+        game.update(GAME_DELTA_TIME);
+        if game.lost {
+            break;
+        }
     }
 
-    game.score() / 10.
+    game.score()
 }
-
-// F: FitnessFn<G> + Send + Sync,
-// NG: NextgenFn<G> + Send + Sync,
-// G: Sized + Send,
 
 fn sort_genomes(
     sim: &neat::GeneticSim<
@@ -109,20 +101,28 @@ fn main() {
     );
     pb.set_message(format!("Training"));
 
+    let mut all_time_best = 0.;
+
     for i in 0..NB_GENERATIONS {
         if !running.load(std::sync::atomic::Ordering::SeqCst) {
             break;
         }
         // debug!("Generation {}/{}", i + 1, NB_GENERATIONS,);
-        // let stopwatch = time::Stopwatch::start_new();
+        // let t = std::time::Instant::now();
 
         sim.next_generation();
 
-        let (sorted_genome, _sort_duration) = time::timeit(|| sort_genomes(&sim));
+        // let (sorted_genome, sort_duration) = time::timeit(|| sort_genomes(&sim));
 
-        let best = sorted_genome.first().unwrap();
-        let mid = sorted_genome.get(NB_GENOME_PER_GEN / 2).unwrap();
-        let worst = sorted_genome.last().unwrap();
+        // let best = sorted_genome.first().unwrap();
+        // let second = sorted_genome.get(1).unwrap();
+        // let third = sorted_genome.get(2).unwrap();
+        // let mid = sorted_genome.get(NB_GENOME_PER_GEN / 2).unwrap();
+        // let worst = sorted_genome.last().unwrap();
+
+        // if best.1 > all_time_best{
+        //     all_time_best = best.1;
+        // }
 
         // println!(
         //     "Gen {} done, took {}\nResults: {:.0}/{:.0}/{:.0}. sorted in {}.",
@@ -134,32 +134,37 @@ fn main() {
         //     time::format(sort_duration, 1)
         // );
 
-        {
-            let data = sim
-                .genomes
-                .iter()
-                .map(|dna| format!("{dna:?}\n"))
-                .collect::<String>();
-            std::fs::File::create(format!(
-                "./sim/{}.{:.0}-{:.0}-{:.0}.backup.txt",
-                i + 1,
-                best.1,
-                mid.1,
-                worst.1
-            ))
-            .unwrap()
-            .write_all(data.as_bytes())
-            .unwrap();
+        // {
+        //     let mut data = format!(
+        //         "Generation: {}/{}\nScores: ({:.0}/{:.0}/{:.0})-{:.0}-{:.0}\n\n",
+        //         i + 1,
+        //         NB_GENERATIONS,
+        //         best.1,
+        //         second.1,
+        //         third.1,
+        //         mid.1,
+        //         worst.1
+        //     );
+        //     data.push_str(
+        //         &sim.genomes
+        //             .iter()
+        //             .map(|dna| format!("{dna:?}\n"))
+        //             .collect::<String>(),
+        //     );
+        //     std::fs::File::create("./sim/DNAbackup.txt".to_string())
+        //         .unwrap()
+        //         .write_all(data.as_bytes())
+        //         .unwrap();
 
-            // std::fs::File::create(format!("./sim/{}.best.json", i + 1,))
-            //     .unwrap()
-            //     .write_all(
-            //         serde_json::to_string(&neat::NNTSerde::from(&best.0.network))
-            //             .unwrap()
-            //             .as_bytes(),
-            //     )
-            //     .unwrap();
-        }
+        //     // std::fs::File::create(format!("./sim/{}.best.json", i + 1,))
+        //     //     .unwrap()
+        //     //     .write_all(
+        //     //         serde_json::to_string(&neat::NNTSerde::from(&best.0.network))
+        //     //             .unwrap()
+        //     //             .as_bytes(),
+        //     //     )
+        //     //     .unwrap();
+        // }
 
         // for (name, data) in [("best", best), ("mid", mid), ("worst", worst)] {
         //     std::fs::File::create(format!(
@@ -177,25 +182,35 @@ fn main() {
         //     .unwrap();
         // }
 
-        pb.inc(1);
-        pb.set_message(format!(
-            "Sim {} [{:.0}/{:.0}/{:.0}]",
-            i + 1,
-            best.1,
-            mid.1,
-            worst.1
-        ))
+        if running.load(std::sync::atomic::Ordering::SeqCst) {
+            pb.inc(1);
+            // pb.set_message(format!(
+            //     "Sim {}/{} [{:.0}/{:.0}/{:.0}] {}/{}",
+            //     i + 1,
+            //     NB_GENERATIONS,
+            //     best.1,
+            //     mid.1,
+            //     worst.1,
+            //     time::format(t.elapsed(), 2),
+            //     time::format(sort_duration, 2)
+            // ))
+            pb.set_message(format!(
+                "Sim {}/{}",
+                i + 1,
+                NB_GENERATIONS,
+            ))
+        }
     }
-    pb.finish();
-    debug!("Training complete, collecting data and building chart...");
+    if running.load(std::sync::atomic::Ordering::SeqCst) {
+        pb.finish();
+    }
+    debug!(
+        "Stopping loop. The training server ran {}\nSaving data . . .\n",
+        time::format(stopwatch.read(), 3)
+    );
 
     let genomes = sort_genomes(&sim);
 
-    debug!(
-        "Max score: {}\nMin score: {}",
-        &genomes.first().unwrap().1,
-        &genomes.last().unwrap().1
-    );
 
     {
         let intermediate = neat::NNTSerde::from(&genomes.first().unwrap().0.network);
@@ -204,7 +219,6 @@ fn main() {
             .unwrap()
             .write_all(serialized.as_bytes())
             .unwrap();
-        println!("\n{}", serialized);
     }
 
     drop(sim);
@@ -218,10 +232,11 @@ fn main() {
             "agent fitness values per generation",
             ("sans-serif", 50).into_font(),
         )
-        .margin(5)
-        .x_label_area_size(30)
+        .margin(15)
+        .x_label_area_size(50)
         .y_label_area_size(30)
-        .build_cartesian_2d(0usize..NB_GENERATIONS, 0f32..1000.0)
+        // .build_cartesian_2d(0usize..NB_GENERATIONS, 0f32..(all_time_best*1.15))
+        .build_cartesian_2d(0usize..NB_GENERATIONS, 0f32..(3000.))
         .unwrap();
 
     chart.configure_mesh().draw().unwrap();
@@ -278,9 +293,4 @@ fn main() {
         .unwrap();
 
     root.present().unwrap();
-
-    debug!(
-        "Stopping loop. The training server ran {}",
-        time::format(stopwatch.read(), 3)
-    );
 }

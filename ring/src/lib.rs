@@ -2,17 +2,17 @@ pub mod agent;
 
 pub const NB_GAMES: usize = 3;
 pub const GAME_TIME_S: usize = 20; // Nb of secconds we let the ai play the game before registering their scrore
-pub const GAME_DT: f64 = 0.05; // 0.0166
-pub const NB_GENERATIONS: usize = 2_000;
-pub const NB_GENOME_PER_GEN: usize = 10_000;
+pub const GAME_FPS: usize = 20; // 60
+pub const GAME_DELTA_TIME: f64 = 1./GAME_FPS as f64;
+pub const NB_GENERATIONS: usize = 10_000;
+pub const NB_GENOME_PER_GEN: usize = 5_000;
 pub const MUTATION_RATE: f32 = 0.01;
 pub const MUTATION_PASSES: usize = 3;
 
-const NB_PLATFORM_IN: usize = 1;
+const NB_PLATFORM_IN: usize = 2;
 const OBJECT_DATA_LEN: usize = 2;
 // Player + player y velocity + data for each platform we want to send
-pub const AGENT_IN: usize =
-    OBJECT_DATA_LEN + 1+ NB_PLATFORM_IN * OBJECT_DATA_LEN;
+pub const AGENT_IN: usize = OBJECT_DATA_LEN + 1 + NB_PLATFORM_IN * OBJECT_DATA_LEN;
 pub const AGENT_OUT: usize = 3; // None, Left, right
 
 pub fn generate_inputs(game: &game::Game) -> [f32; AGENT_IN] {
@@ -21,7 +21,7 @@ pub fn generate_inputs(game: &game::Game) -> [f32; AGENT_IN] {
     let rect_to_vec = |rect: &maths::Rect| -> [f32; OBJECT_DATA_LEN] {
         [
             rect.center().x as f32 / game::GAME_WIDTH as f32,
-            rect.center().y as f32 / game::GAME_HEIGHT as f32,
+            (rect.center().y as f32 + rect.height() as f32 /2.) / game::GAME_HEIGHT as f32,
             // rect.width() as f32,
             // rect.height() as f32,
         ]

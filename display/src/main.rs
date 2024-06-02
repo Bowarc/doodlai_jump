@@ -76,39 +76,39 @@ impl Display {
             ),
             "",
         );
-        {
-            let anchors = [
-                ui::Anchor::CenterCenter,
-                ui::Anchor::Topleft,
-                ui::Anchor::TopCenter,
-                ui::Anchor::TopRight,
-                ui::Anchor::RightCenter,
-                ui::Anchor::BotRight,
-                ui::Anchor::BotCenter,
-                ui::Anchor::BotLeft,
-                ui::Anchor::LeftCenter,
-            ];
+        // {
+        //     let anchors = [
+        //         ui::Anchor::CenterCenter,
+        //         ui::Anchor::Topleft,
+        //         ui::Anchor::TopCenter,
+        //         ui::Anchor::TopRight,
+        //         ui::Anchor::RightCenter,
+        //         ui::Anchor::BotRight,
+        //         ui::Anchor::BotCenter,
+        //         ui::Anchor::BotLeft,
+        //         ui::Anchor::LeftCenter,
+        //     ];
 
-            for anchor in anchors.iter() {
-                global_ui.add_element(
-                    ui::element::Element::new_button(
-                        format!("Anchor {anchor:?} test guide"),
-                        *anchor,
-                        ui::Vector::new(10., 10.),
-                        ui::Style::new(
-                            render::Color::from_rgba(100, 100, 100, 100),
-                            Some(ui::style::Background::new(
-                                render::Color::from_rgb(100, 100, 100),
-                                None,
-                            )),
-                            Some(ui::style::Border::new(render::Color::random_rgb(), 2.)),
-                        )
-                        .into(),
-                    ),
-                    "test",
-                );
-            }
-        }
+        //     for anchor in anchors.iter() {
+        //         global_ui.add_element(
+        //             ui::element::Element::new_button(
+        //                 format!("Anchor {anchor:?} test guide"),
+        //                 *anchor,
+        //                 ui::Vector::new(10., 10.),
+        //                 ui::Style::new(
+        //                     render::Color::from_rgba(100, 100, 100, 100),
+        //                     Some(ui::style::Background::new(
+        //                         render::Color::from_rgb(100, 100, 100),
+        //                         None,
+        //                     )),
+        //                     Some(ui::style::Border::new(render::Color::random_rgb(), 2.)),
+        //                 )
+        //                 .into(),
+        //             ),
+        //             "test",
+        //         );
+        //     }
+        // }
 
         Ok(Self {
             cfg,
@@ -154,7 +154,7 @@ impl ggez::event::EventHandler for Display {
         {
             let output = self.nn.predict(ring::generate_inputs(&self.game));
 
-            println!("outputed: {output:?}");
+            println!("output: {output:?}");
             match neat::MaxIndex::max_index(output.iter()) {
                 0 => (), // No action
                 1 => self.game.player_move_left(),
@@ -232,7 +232,7 @@ impl ggez::event::EventHandler for Display {
 
         render_request.add(
             match self.game.player.direction() {
-                0 => assets::sprite::SpriteId::MissingNo,
+                0 => assets::sprite::SpriteId::DoodleRight,
                 1 => assets::sprite::SpriteId::DoodleRight,
                 -1 => assets::sprite::SpriteId::DoodleLeft,
                 _ => unreachable!(),

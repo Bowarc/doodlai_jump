@@ -1,4 +1,4 @@
-use neat::{CrossoverReproduction, DivisionReproduction, RandomlyMutable};
+use neat::{CrossoverReproduction,  RandomlyMutable};
 
 #[derive(PartialEq, Clone, Debug, CrossoverReproduction, RandomlyMutable)]
 pub struct DNA {
