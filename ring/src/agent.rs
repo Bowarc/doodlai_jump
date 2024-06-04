@@ -1,5 +1,8 @@
 use neat::{CrossoverReproduction,  RandomlyMutable};
 
+pub static mut LOADED_NNT: Option<neat::NeuralNetworkTopology<{ crate::AGENT_IN }, { crate::AGENT_OUT }>> = None;
+
+
 #[derive(PartialEq, Clone, Debug, CrossoverReproduction, RandomlyMutable)]
 pub struct DNA {
     pub network: neat::NeuralNetworkTopology<{ crate::AGENT_IN }, { crate::AGENT_OUT }>,
@@ -15,8 +18,7 @@ impl neat::GenerateRandom for DNA {
                 crate::MUTATION_PASSES,
                 rng,
             ),
-            // network: neat::NeuralNetworkTopology::new(0.1, 3, rng),
-            // network: unsafe { crate::LOADED_NNT.clone().unwrap() },
+            // network: unsafe { LOADED_NNT.clone().unwrap() },
         }
     }
 }

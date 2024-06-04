@@ -4,15 +4,16 @@ use plotters::{
     style::{Color as _, IntoFont as _},
 };
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
-use ring::{agent, GAME_DELTA_TIME, GAME_FPS, GAME_TIME_S, NB_GAMES, NB_GENERATIONS, NB_GENOME_PER_GEN};
+use ring::{
+    agent, AGENT_IN, AGENT_OUT, GAME_DELTA_TIME, GAME_FPS, GAME_TIME_S, NB_GAMES, NB_GENERATIONS,
+    NB_GENOME_PER_GEN,
+};
 use std::io::Write as _;
 
 #[macro_use]
 extern crate log;
 
 mod utils;
-
-// static mut LOADED_NNT: Option<neat::NeuralNetworkTopology<{ AGENT_IN }, { AGENT_OUT }>> = None;
 
 fn fitness(dna: &agent::DNA) -> f32 {
     let agent = agent::Agent::from(dna);
@@ -74,13 +75,14 @@ fn main() {
 
     debug!("Starting training server");
 
-    // let nnt = serde_json::from_str::<neat::NNTSerde<{ agent::IN }, { agent::OUT }>>(include_str!(
-    //     "./nnt.json"
-    // ))
-    // .unwrap();
-
     // unsafe {
-    //     LOADED_NNT = Some(nnt.into());
+    //     agent::LOADED_NNT = Some(
+    //         serde_json::from_str::<neat::NNTSerde<{ AGENT_IN }, { AGENT_OUT }>>(include_str!(
+    //             "./nnt.json"
+    //         ))
+    //         .unwrap()
+    //         .into(),
+    //     );
     // };
 
     let performance_stats =
@@ -194,11 +196,7 @@ fn main() {
             //     time::format(t.elapsed(), 2),
             //     time::format(sort_duration, 2)
             // ))
-            pb.set_message(format!(
-                "Sim {}/{}",
-                i + 1,
-                NB_GENERATIONS,
-            ))
+            pb.set_message(format!("Sim {}/{}", i + 1, NB_GENERATIONS,))
         }
     }
     if running.load(std::sync::atomic::Ordering::SeqCst) {
@@ -211,7 +209,6 @@ fn main() {
 
     let genomes = sort_genomes(&sim);
 
-
     {
         let intermediate = neat::NNTSerde::from(&genomes.first().unwrap().0.network);
         let serialized = serde_json::to_string(&intermediate).unwrap();
@@ -222,24 +219,6 @@ fn main() {
     }
 
     drop(sim);
-
-    let root = plotters::prelude::SVGBackend::new("./sim/fitness-plot.svg", (640, 480))
-        .into_drawing_area();
-    root.fill(&plotters::prelude::WHITE).unwrap();
-
-    let mut chart = plotters::prelude::ChartBuilder::on(&root)
-        .caption(
-            "agent fitness values per generation",
-            ("sans-serif", 50).into_font(),
-        )
-        .margin(15)
-        .x_label_area_size(50)
-        .y_label_area_size(30)
-        // .build_cartesian_2d(0usize..NB_GENERATIONS, 0f32..(all_time_best*1.15))
-        .build_cartesian_2d(0usize..NB_GENERATIONS, 0f32..(3000.))
-        .unwrap();
-
-    chart.configure_mesh().draw().unwrap();
 
     let data: Vec<_> = std::sync::Arc::into_inner(performance_stats)
         .unwrap()
@@ -260,6 +239,27 @@ fn main() {
     let lows = data
         .iter()
         .map(|(i, agent::PerformanceStats { low, .. })| (*i, *low));
+
+    let root = plotters::prelude::SVGBackend::new("./sim/fitness-plot.svg", (640, 480))
+        .into_drawing_area();
+    root.fill(&plotters::prelude::WHITE).unwrap();
+
+    let mut chart = plotters::prelude::ChartBuilder::on(&root)
+        .caption(
+            "agent fitness values per generation",
+            ("sans-serif", 50).into_font(),
+        )
+        .margin(15)
+        .x_label_area_size(50)
+        .y_label_area_size(30)
+        // .build_cartesian_2d(0usize..NB_GENERATIONS, 0f32..(all_time_best*1.15))
+        .build_cartesian_2d(
+            0usize..NB_GENERATIONS,
+            0f32..(highs.clone().max_by_key(|(_i, p)| *p as i32).unwrap().1 as f32 * 1.2),
+        )
+        .unwrap();
+
+    chart.configure_mesh().draw().unwrap();
 
     chart
         .draw_series(plotters::prelude::LineSeries::new(
