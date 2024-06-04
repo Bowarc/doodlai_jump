@@ -61,6 +61,24 @@ impl Display {
 
         let _ = global_ui.add_element(
             ui::element::Element::new_text(
+                "Score",
+                (ui::Anchor::TopRight, (-50., 70.)),
+                3.,
+                ui::Style::new(
+                    render::Color::random_rgb(),
+                    Some(ui::style::Background::new(
+                        render::Color::from_rgba(23, 23, 23, 150),
+                        None,
+                    )),
+                    None,
+                ),
+                vec![],
+            ),
+            "",
+        );
+
+        let _ = global_ui.add_element(
+            ui::element::Element::new_text(
                 "mouse pos text",
                 (ui::Anchor::BotRight, (-1., -1.)),
                 20.,
@@ -144,13 +162,20 @@ impl ggez::event::EventHandler for Display {
         self.game.update(dt);
 
         // game inputs
-        // if input::pressed(ctx, input::Input::KeyboardQ){
+        // if input::pressed(ctx, input::Input::KeyboardQ) {
         //     self.game.player_move_left()
-        // }else if input::pressed(ctx, input::Input::KeyboardD){
+        // } else if input::pressed(ctx, input::Input::KeyboardD) {
         //     self.game.player_move_right()
         // }
 
         // network inputs
+
+        // println!(
+        //     "{:?}",
+        //     (self.game.player.rect.center().y as f32 - self.game.scroll as f32
+        //         + self.game.player.rect.height() as f32 / 2.)
+        //         / game::GAME_HEIGHT as f32
+        // );
         {
             let output = self.nn.predict(ring::generate_inputs(&self.game));
 
@@ -164,6 +189,11 @@ impl ggez::event::EventHandler for Display {
         }
 
         self.gui_menu.update(ctx, &mut self.cfg)?;
+
+        self.global_ui
+            .get_element("Score")
+            .inner_mut::<ui::element::Text>()
+            .replace_bits(vec![format!("{}", self.game.score()).into()]);
 
         self.global_ui.update(ctx);
 
@@ -314,6 +344,7 @@ impl ggez::event::EventHandler for Display {
             .input
             .mouse_wheel_event(x * 10., y * 10.);
         self.global_ui.register_mouse_wheel(x, y);
+
         Ok(())
     }
 
