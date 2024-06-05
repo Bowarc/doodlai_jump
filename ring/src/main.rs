@@ -104,9 +104,11 @@ fn main() {
     pb.set_message(format!("Training"));
 
     let mut all_time_best = 0.;
+    let mut actual_generations = NB_GENERATIONS;
 
     for i in 0..NB_GENERATIONS {
         if !running.load(std::sync::atomic::Ordering::SeqCst) {
+            actual_generations = i + 1;
             break;
         }
         // debug!("Generation {}/{}", i + 1, NB_GENERATIONS,);
@@ -254,7 +256,7 @@ fn main() {
         .y_label_area_size(30)
         // .build_cartesian_2d(0usize..NB_GENERATIONS, 0f32..(all_time_best*1.15))
         .build_cartesian_2d(
-            0usize..NB_GENERATIONS,
+            0usize..actual_generations,
             0f32..(highs.clone().max_by_key(|(_i, p)| *p as i32).unwrap().1 as f32 * 1.2),
         )
         .unwrap();

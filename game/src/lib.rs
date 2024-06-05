@@ -51,10 +51,10 @@ impl Game {
 
     pub fn update(&mut self, dt: f64) {
         if self.lost {
-            println!("{}", self.score());
+            // println!("{}", self.score());
             return;
         }
-        assert_eq!(self.platforms.len(), PLATFORM_LIMIT as usize);
+        // assert_eq!(self.platforms.len(), PLATFORM_LIMIT as usize);
 
         // remove platforms
         if self.player.rect.center().y - self.scroll as f64 - GAME_HEIGHT > 0. {
