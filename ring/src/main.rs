@@ -24,8 +24,12 @@ fn fitness(dna: &agent::DNA) -> f32 {
 fn play_game(agent: &agent::Agent) -> f32 {
     let mut game = game::Game::new();
 
+    let mut saved_score = game.score();
+    let mut save_timer = time::DTDelay::new(10.);
+
     // loop for the number of frames we want to play, should be enough frames to play 100s at 60fps
-    for _ in 0..(GAME_FPS * GAME_TIME_S) {
+    // for _ in 0..(GAME_FPS * GAME_TIME_S) {
+    while game.score() < 100_000. {
         let output = agent.network.predict(ring::generate_inputs(&game));
 
         match output.iter().max_index() {
@@ -36,8 +40,21 @@ fn play_game(agent: &agent::Agent) -> f32 {
         }
 
         game.update(GAME_DELTA_TIME);
+        save_timer.update(GAME_DELTA_TIME);
+
         if game.lost {
+            // println!("Lost: {}", game.score());
             break;
+        }
+
+        if save_timer.ended() {
+            if game.score() == saved_score{
+                // The player stagnated and needs to be shot (ingame)
+                game.lost = true;
+                break
+            }
+            saved_score = game.score();
+            save_timer.restart_custom_timeline(save_timer.time_since_ended());
         }
     }
 

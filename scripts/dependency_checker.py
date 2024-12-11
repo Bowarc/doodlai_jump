@@ -1,3 +1,4 @@
+# cython: language_level=3
 """.
     Global dependency: Crate imported with crate.workspace=true
     Specific dependency: Crate imported using crate = "x.x.x" (or crate = {version ="x.x.x"})
@@ -183,7 +184,7 @@ def rule4(package_dependencies: List[Dependencies]) -> None:
         for dep in package.get_all():
             r_dep: str = dep.replace("-", "_")
 
-            pattern: str = f"{r_dep}::|use {r_dep}|extern crate {r_dep}"
+            pattern: str = format("{r_dep}::|use {r_dep}|extern crate {r_dep}")
 
             process: subprocess.Popen = subprocess.Popen(
                 # removed os.path.join(package.path, "src") to fix build.rs not being checked
@@ -236,5 +237,5 @@ def main() -> None:
     rule4(package_dependencies)
 
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+main()

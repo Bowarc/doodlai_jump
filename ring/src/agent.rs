@@ -1,4 +1,4 @@
-use neat::{CrossoverReproduction,  RandomlyMutable};
+use neat::{CrossoverReproduction, RandomlyMutable};
 
 pub static mut LOADED_NNT: Option<neat::NeuralNetworkTopology<{ crate::AGENT_IN }, { crate::AGENT_OUT }>> = None;
 
