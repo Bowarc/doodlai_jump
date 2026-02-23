@@ -105,9 +105,9 @@ impl neat::FitnessObserver<Brain> for PlottingObserver {
         // these are sorted
         let mut stats = self.performance_stats.lock().unwrap();
         stats.push(PerformanceStats {
-            high: fitnesses.last().unwrap().1,
+            high: fitnesses.first().unwrap().1,
             median: fitnesses[fitnesses.len() / 2].1,
-            low: fitnesses.first().unwrap().1,
+            low: fitnesses.last().unwrap().1,
         });
     }
 }
