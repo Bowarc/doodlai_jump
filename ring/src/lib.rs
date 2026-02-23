@@ -1,12 +1,10 @@
-pub mod agent;
-
 pub const NB_GAMES: usize = 3;
 pub const GAME_TIME_S: usize = 20; // Nb of secconds we let the ai play the game before registering their scrore
 pub const GAME_FPS: usize = 20; // 60
 pub const GAME_DELTA_TIME: f64 = 1. / GAME_FPS as f64;
-pub const NB_GENERATIONS: usize = 20_000;
-pub const NB_GENOME_PER_GEN: usize = 5_000;
-pub const MUTATION_RATE: f32 = 0.01;
+pub const NB_GENERATIONS: usize = 200;
+pub const NB_GENOME_PER_GEN: usize = 2_500;
+pub const MUTATION_RATE: f32 = 0.05;
 pub const MUTATION_PASSES: usize = 3;
 
 const NB_PLATFORM_IN: usize = 3;
@@ -46,13 +44,17 @@ pub fn generate_inputs(game: &game::Game) -> [f32; AGENT_IN] {
     };
 
     // inputs.extend(rect_to_vec(&game.player.rect));
-    inputs.extend([
-        // game.player.rect.center().x as f32,
-        // game.player.velocity.y as f32,
-        game.player.rect.center().x / game::GAME_WIDTH,
-        (game.player.rect.center().y - game.scroll as f64) / game::GAME_HEIGHT,
-        game.player.velocity.y,
-    ].iter().map(|v| *v as f32));
+    inputs.extend(
+        [
+            // game.player.rect.center().x as f32,
+            // game.player.velocity.y as f32,
+            game.player.rect.center().x / game::GAME_WIDTH,
+            (game.player.rect.center().y - game.scroll as f64) / game::GAME_HEIGHT,
+            game.player.velocity.y,
+        ]
+        .iter()
+        .map(|v| *v as f32),
+    );
 
     // ordered by distance to player
     inputs.extend({
@@ -83,4 +85,29 @@ pub fn generate_inputs(game: &game::Game) -> [f32; AGENT_IN] {
     });
 
     inputs.try_into().unwrap()
+}
+
+pub type Brain = neat::NeuralNetwork<AGENT_IN, AGENT_OUT>;
+
+pub struct PerformanceStats {
+    pub high: f32,
+    pub median: f32,
+    pub low: f32,
+}
+
+#[derive(Default, Clone)]
+pub struct PlottingObserver {
+    pub performance_stats: std::sync::Arc<std::sync::Mutex<Vec<PerformanceStats>>>,
+}
+
+impl neat::FitnessObserver<Brain> for PlottingObserver {
+    fn observe(&self, fitnesses: &[(Brain, f32)]) {
+        // these are sorted
+        let mut stats = self.performance_stats.lock().unwrap();
+        stats.push(PerformanceStats {
+            high: fitnesses.last().unwrap().1,
+            median: fitnesses[fitnesses.len() / 2].1,
+            low: fitnesses.first().unwrap().1,
+        });
+    }
 }

@@ -10,24 +10,24 @@ name = "display"
 path = "src/main.rs"
 
 [dependencies]
-rust-embed = { version = "8.0.0", features = ["interpolate-folder-path", "debug-embed"] }
+rust-embed = { version = "8.11.0", features = ["interpolate-folder-path", "debug-embed"] }
 game = {path = "../game"}
 ring = {path = "../ring"}
 ggegui = {git = "https://github.com/Bowarc/ggegui"}
 maths = {git = "https://github.com/Bowarc/Crates.git", package = "maths", features=["ggez"]}
 ggez = "0.9.3"
 derivative = "2.2.0"
-serde = { version = "1.0.203", features = ["derive"] }
-hashbrown = "0.14.0"
+serde = { version = "1.0.228", features = ["derive"] }
+hashbrown = "0.14.5"
 ron = "0.8.1"
 log.workspace = true
-spin_sleep = "1.1.1"
+spin_sleep = "1.3.3"
 logger.workspace = true
 threading = {git = "https://github.com/Bowarc/Crates.git", package = "threading"}
 time.workspace = true
 # mem.workspace = true
 random.workspace = true
-enum_dispatch = "0.3.12"
+enum_dispatch = "0.3.13"
 neat.workspace = true
 serde_json.workspace = true
 
