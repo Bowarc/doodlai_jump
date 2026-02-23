@@ -110,11 +110,8 @@ fn main() {
         CrossoverRepopulator::new(
             MUTATION_RATE,
             ReproductionSettings {
-                mutation: MutationSettings {
-                    mutation_rate: MUTATION_RATE,
-                    ..Default::default()
-                },
                 mutation_passes: MUTATION_PASSES,
+                ..Default::default()
             },
         ),
     );

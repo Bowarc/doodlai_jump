@@ -2131,9 +2131,9 @@ dependencies = [
 
 [[package]]
 name = "neat"
-version = "1.0.0"
+version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ac6a1fed3b11119caae216b33899e0c0eae8374b3905d1e8e9dac9d3246dbc73"
+checksum = "6f361a6452592bc517336dee5bd8e2cca2dede42eeded2299a001aa4ead307f6"
 dependencies = [
  "atomic_float",
  "bitflags 2.11.0",
