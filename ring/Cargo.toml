@@ -16,14 +16,15 @@ path = "src/main.rs"
 
 [dependencies]
 game = {path = "../game"}
-ctrlc = "3.4.1"
+ctrlc = "3.5.2"
 log.workspace = true
 logger.workspace = true
 time.workspace = true
 rand = "0.8.5"
 maths.workspace =true
 serde_json.workspace = true
-rayon = "1.8.1"
+rayon = "1.11.0"
 neat.workspace = true
-indicatif = "0.17.8"
-plotters = "0.3.5"
+indicatif = "0.17.11"
+plotters = "0.3.7"
+genetic-rs.workspace = true

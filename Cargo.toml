@@ -1,6 +1,6 @@
 [workspace]
 resolver = "1"
-members = [ 
+members = [
     "game",
     "ring",
     "display"
@@ -12,12 +12,11 @@ exclude = [
 opt-level = 3
 
 [workspace.dependencies]
-log = "0.4.20"
+log = "0.4.29"
 logger = {git = "https://github.com/Bowarc/Crates.git", package = "logger"}
 time = {git = "https://github.com/Bowarc/Crates.git", package = "time"}
 random = {git = "https://github.com/Bowarc/Crates.git", package = "random"}
 maths = {git = "https://github.com/Bowarc/Crates.git", package = "maths"}
-# neat = { version = "0.5.1", features = ["crossover", "rayon", "serde"] }
-neat = { git = "https://github.com/hypercodec/neat", branch = "dev",  features = ["crossover", "rayon", "serde"] }
-serde_json = "1.0.117"
-
+neat = { version = "1.0.1",  features = ["serde"] }
+serde_json = "1.0.149"
+genetic-rs = { version = "1.2.1", features = ["derive"] }

@@ -128,24 +128,21 @@ impl Display {
         //     }
         // }
 
-        Ok(Self {
-            cfg,
-            renderer,
-            asset_mgr,
-            frame_stats: utils::framestats::FrameStats::new(),
-            gui_menu,
-            global_ui,
-            game: game::Game::new(),
-            nn: {
-                let topology: neat::NeuralNetworkTopology<{ ring::AGENT_IN }, { ring::AGENT_OUT }> =
-                    serde_json::from_str::<neat::NNTSerde<{ ring::AGENT_IN }, { ring::AGENT_OUT }>>(
-                        include_str!("./nnt.json"),
-                    )
-                    .unwrap()
-                    .into();
-                (&topology).into()
+        Ok(
+            Self {
+                cfg,
+                renderer,
+                asset_mgr,
+                frame_stats: utils::framestats::FrameStats::new(),
+                gui_menu,
+                global_ui,
+                game: game::Game::new(),
+                nn: serde_json::from_str::<
+                    neat::NeuralNetwork<{ ring::AGENT_IN }, { ring::AGENT_OUT }>,
+                >(include_str!("./nnt.json"))
+                .unwrap(),
             },
-        })
+        )
     }
 }
 
@@ -180,7 +177,7 @@ impl ggez::event::EventHandler for Display {
             let output = self.nn.predict(ring::generate_inputs(&self.game));
 
             println!("output: {output:?}");
-            match neat::MaxIndex::max_index(output.iter()) {
+            match neat::MaxIndex::max_index(output.iter()).unwrap() {
                 0 => (), // No action
                 1 => self.game.player_move_left(),
                 2 => self.game.player_move_right(),

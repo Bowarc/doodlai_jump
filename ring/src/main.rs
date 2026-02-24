@@ -1,12 +1,12 @@
-use neat::{GenerateRandomCollection, MaxIndex};
+use neat::*;
 use plotters::{
     drawing::IntoDrawingArea as _,
     style::{Color as _, IntoFont as _},
 };
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use ring::{
-    agent, AGENT_IN, AGENT_OUT, GAME_DELTA_TIME, GAME_FPS, GAME_TIME_S, NB_GAMES, NB_GENERATIONS,
-    NB_GENOME_PER_GEN,
+    Brain, PerformanceStats, PlottingObserver, GAME_DELTA_TIME, GAME_FPS, GAME_TIME_S,
+    MUTATION_PASSES, MUTATION_RATE, NB_GAMES, NB_GENERATIONS, NB_GENOME_PER_GEN,
 };
 use std::io::Write as _;
 
@@ -15,13 +15,11 @@ extern crate log;
 
 mod utils;
 
-fn fitness(dna: &agent::DNA) -> f32 {
-    let agent = agent::Agent::from(dna);
-
-    (0..NB_GAMES).map(|_| play_game(&agent)).sum::<f32>() / NB_GAMES as f32
+fn fitness(brain: &Brain) -> f32 {
+    (0..NB_GAMES).map(|_| play_game(&brain)).sum::<f32>() / NB_GAMES as f32
 }
 
-fn play_game(agent: &agent::Agent) -> f32 {
+fn play_game(brain: &Brain) -> f32 {
     let mut game = game::Game::new();
 
     let mut saved_score = game.score();
@@ -30,9 +28,9 @@ fn play_game(agent: &agent::Agent) -> f32 {
     // loop for the number of frames we want to play, should be enough frames to play 100s at 60fps
     // for _ in 0..(GAME_FPS * GAME_TIME_S) {
     while game.score() < 100_000. {
-        let output = agent.network.predict(ring::generate_inputs(&game));
+        let output = brain.predict(ring::generate_inputs(&game));
 
-        match output.iter().max_index() {
+        match output.iter().max_index().unwrap() {
             0 => (), // No action
             1 => game.player_move_left(),
             2 => game.player_move_right(),
@@ -48,10 +46,10 @@ fn play_game(agent: &agent::Agent) -> f32 {
         }
 
         if save_timer.ended() {
-            if game.score() == saved_score{
+            if game.score() == saved_score {
                 // The player stagnated and needs to be shot (ingame)
                 game.lost = true;
-                break
+                break;
             }
             saved_score = game.score();
             save_timer.restart_custom_timeline(save_timer.time_since_ended());
@@ -61,20 +59,13 @@ fn play_game(agent: &agent::Agent) -> f32 {
     game.score()
 }
 
-fn sort_genomes(
-    sim: &neat::GeneticSim<
-        impl Fn(&agent::DNA) -> f32 + Send + Sync,
-        impl neat::NextgenFn<agent::DNA> + Send + Sync,
-        agent::DNA,
-    >,
-) -> Vec<(&agent::DNA, f32)> {
+fn sort_genomes(genomes: &[Brain]) -> Vec<(&Brain, f32)> {
     // Iter with rayon
 
-    let mut genomes = sim
-        .genomes
+    let mut genomes = genomes
         .par_iter()
         .map(|dna| (dna, fitness(dna)))
-        .collect::<Vec<(&agent::DNA, f32)>>();
+        .collect::<Vec<(&Brain, f32)>>();
 
     genomes.sort_unstable_by_key(|(_dna, fitness)| -fitness as i32);
 
@@ -104,12 +95,26 @@ fn main() {
 
     let performance_stats =
         std::sync::Arc::new(std::sync::Mutex::new(Vec::with_capacity(NB_GENERATIONS)));
-    let ng = agent::PlottingNG {
+    let observer = PlottingObserver {
         performance_stats: performance_stats.clone(),
-        actual_ng: neat::crossover_pruning_nextgen,
     };
 
-    let mut sim = neat::GeneticSim::new(Vec::gen_random(NB_GENOME_PER_GEN), fitness, ng);
+    let mut rng = rand::rng();
+
+    let mut sim = GeneticSim::new(
+        Vec::gen_random(&mut rng, NB_GENOME_PER_GEN),
+        FitnessEliminator::builder()
+            .fitness_fn(fitness)
+            .observer(observer)
+            .build(),
+        CrossoverRepopulator::new(
+            MUTATION_RATE,
+            ReproductionSettings {
+                mutation_passes: MUTATION_PASSES,
+                ..Default::default()
+            },
+        ),
+    );
 
     let pb = indicatif::ProgressBar::new(NB_GENERATIONS as u64);
     pb.set_style(
@@ -226,11 +231,10 @@ fn main() {
         time::format(stopwatch.read(), 3)
     );
 
-    let genomes = sort_genomes(&sim);
+    let genomes = sort_genomes(&sim.genomes);
 
     {
-        let intermediate = neat::NNTSerde::from(&genomes.first().unwrap().0.network);
-        let serialized = serde_json::to_string(&intermediate).unwrap();
+        let serialized = serde_json::to_string(&genomes.first().unwrap().0).unwrap();
         std::fs::File::create("./sim/best.json")
             .unwrap()
             .write_all(serialized.as_bytes())
@@ -249,15 +253,15 @@ fn main() {
 
     let highs = data
         .iter()
-        .map(|(i, agent::PerformanceStats { high, .. })| (*i, *high));
+        .map(|(i, PerformanceStats { high, .. })| (*i, *high));
 
     let medians = data
         .iter()
-        .map(|(i, agent::PerformanceStats { median, .. })| (*i, *median));
+        .map(|(i, PerformanceStats { median, .. })| (*i, *median));
 
     let lows = data
         .iter()
-        .map(|(i, agent::PerformanceStats { low, .. })| (*i, *low));
+        .map(|(i, PerformanceStats { low, .. })| (*i, *low));
 
     let root = plotters::prelude::SVGBackend::new("./sim/fitness-plot.svg", (640, 480))
         .into_drawing_area();
