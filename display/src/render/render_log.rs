@@ -1,29 +1,29 @@
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct RenderLog {
     elements: i32,
-    sprites: i32,
+    textures: i32,
     meshes: i32,
     texts: i32,
     draw_calls: i32,
-    sprites_not_found: i32,
+    textures_not_found: i32,
 }
 impl RenderLog {
     pub fn new() -> Self {
         Self {
             elements: 0,
-            sprites: 0,
+            textures: 0,
             meshes: 0,
             texts: 0,
             draw_calls: 0,
 
-            sprites_not_found: 0,
+            textures_not_found: 0,
         }
     }
     pub fn on_draw_call(&mut self) {
         self.draw_calls += 1;
     }
-    pub fn on_sprite(&mut self) {
-        self.sprites += 1;
+    pub fn on_texture(&mut self) {
+        self.textures += 1;
         self.elements += 1;
     }
     pub fn on_mesh(&mut self) {
@@ -34,14 +34,14 @@ impl RenderLog {
         self.texts += 1;
         self.elements += 1;
     }
-    pub fn on_sprites_not_found(&mut self) {
-        self.sprites_not_found += 1;
+    pub fn on_texture_not_found(&mut self) {
+        self.textures_not_found += 1;
     }
     pub fn elements(&self) -> i32 {
         self.elements
     }
-    pub fn sprites(&self) -> i32 {
-        self.sprites
+    pub fn textures(&self) -> i32 {
+        self.textures
     }
     pub fn meshes(&self) -> i32 {
         self.meshes
@@ -52,8 +52,8 @@ impl RenderLog {
     pub fn draw_calls(&self) -> i32 {
         self.draw_calls
     }
-    pub fn sprites_not_found(&self) -> i32 {
-        self.sprites_not_found
+    pub fn textures_not_found(&self) -> i32 {
+        self.textures_not_found
     }
 }
 
@@ -63,11 +63,11 @@ impl std::ops::Add<RenderLog> for RenderLog {
     fn add(self, other: Self) -> Self {
         Self {
             elements: self.elements + other.elements,
-            sprites: self.sprites + other.sprites,
+            textures: self.textures + other.textures,
             meshes: self.meshes + other.meshes,
             texts: self.texts + other.texts,
             draw_calls: self.draw_calls + other.draw_calls,
-            sprites_not_found: self.sprites_not_found + other.sprites_not_found,
+            textures_not_found: self.textures_not_found + other.textures_not_found,
         }
     }
 }
@@ -78,11 +78,11 @@ impl std::ops::Sub<RenderLog> for RenderLog {
     fn sub(self, other: Self) -> Self {
         Self {
             elements: self.elements - other.elements,
-            sprites: self.sprites - other.sprites,
+            textures: self.textures - other.textures,
             meshes: self.meshes - other.meshes,
             texts: self.texts - other.texts,
             draw_calls: self.draw_calls - other.draw_calls,
-            sprites_not_found: self.sprites_not_found - other.sprites_not_found,
+            textures_not_found: self.textures_not_found - other.textures_not_found,
         }
     }
 }

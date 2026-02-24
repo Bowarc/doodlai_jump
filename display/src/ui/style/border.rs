@@ -26,9 +26,9 @@ impl Border {
     pub fn draw(
         &self,
         mesh: &mut ggez::graphics::MeshBuilder,
-        element_rect: maths::Rect,
+        element_rect: math::Rect,
     ) -> ggez::GameResult {
-        let r = maths::Rect::new(
+        let r = math::Rect::new(
             element_rect.r_topleft() - self.get_size() * 0.5,
             element_rect.size() + *self.get_size(),
             element_rect.rotation(),

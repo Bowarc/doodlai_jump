@@ -1,4 +1,4 @@
-use crate::assets::file;
+use crate::assets::file::{self, Path};
 use crate::config;
 use crate::gui;
 use ggegui::egui;
@@ -9,8 +9,7 @@ mod credits_view;
 
 const WINDOW_SIZE: (f32, f32) = (300., 130.);
 
-const ARCHITECTURE_FILE: file::ConsPath =
-    file::ConsPath::new(file::FileSystem::Internal, "config/menuArchitecture.ron");
+const ARCHITECTURE_FILE: Path = Path::new("config/menuArchitecture.ron");
 
 #[derive(Debug, Clone)]
 pub struct OverTimeValues {
@@ -77,7 +76,7 @@ impl PauseMenu {
         //     return Err(ggez::GameError::ResourceLoadError(format!("{e:?}")));
         // };
 
-        let architecture_bytes = match file::try_bytes(ARCHITECTURE_FILE.into()) {
+        let architecture_bytes = match file::try_bytes(ARCHITECTURE_FILE) {
             Ok(bytes) => bytes,
             Err(e) => {
                 error!("Got an error while loading pause menu architecture file: {e:?}");

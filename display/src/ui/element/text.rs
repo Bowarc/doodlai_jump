@@ -20,7 +20,7 @@ pub enum TextBit {
         color_opt: Option<crate::render::Color>,
     },
     Image {
-        sprite_id: crate::assets::sprite::SpriteId,
+        sprite_id: crate::assets::texture::TextureId,
         color_opt: Option<crate::render::Color>,
     },
     NewLine,
@@ -30,7 +30,7 @@ pub enum TextBit {
 enum ComputedTextBit {
     Text(ggez::graphics::Text),
     Image(
-        crate::assets::sprite::SpriteId,
+        crate::assets::texture::TextureId,
         Option<crate::render::Color>,
     ),
 }
@@ -101,18 +101,18 @@ fn compute_text_bits(bits: Vec<TextBit>) -> Vec<TextBit> {
 
 impl Text {
     pub fn new(
-        id: crate::ui::Id,
-        position: crate::ui::Position,
-        req_size: crate::ui::Value,
+        id: impl Into<crate::ui::Id>,
+        position: impl Into<crate::ui::Position>, // Center
+        size: impl Into<crate::ui::Value>,
         style: crate::ui::Style,
         bits: Vec<TextBit>,
     ) -> Self {
         let new_bits = compute_text_bits(bits);
 
         Self {
-            id,
-            position,
-            req_size,
+            id: id.into(),
+            position: position.into(),
+            req_size: size.into(),
             real_size: crate::ui::Vector::new(0., 0.),
             style,
             bits: new_bits,
@@ -123,7 +123,7 @@ impl Text {
         &mut self,
         ctx: &mut ggez::Context,
         target_size: f64,
-        real_rect: &maths::Rect,
+        real_rect: &math::Rect,
         render_request: &mut crate::render::RenderRequest,
     ) {
         use ggez::graphics::Drawable as _;
@@ -135,8 +135,8 @@ impl Text {
         for bit in self.bits.iter() {
             match bit {
                 TextBit::Text { raw, color_opt } => {
-                    let mut f = ggez::graphics::TextFragment::new(raw.clone())
-                        .scale(target_size as f32 * 10.);
+                    let mut f =
+                        ggez::graphics::TextFragment::new(raw.clone()).scale(target_size as f32);
                     f.color = color_opt.map(|c| c.into());
                     global_text.add(f);
                 }
@@ -166,7 +166,7 @@ impl Text {
         &mut self,
         ctx: &mut ggez::Context,
         target_size: f64,
-        real_rect: &maths::Rect,
+        real_rect: &math::Rect,
         render_request: &mut crate::render::RenderRequest,
     ) {
         use ggez::graphics::Drawable as _;
@@ -181,7 +181,7 @@ impl Text {
                                 ggtext,
                                 crate::render::DrawParam::default().pos(
                                     real_rect.center()
-                                        + maths::Point::new(
+                                        + math::Point::new(
                                             x - curr_width * 0.5,
                                             0. + curr_height - real_rect.height() * 0.5,
                                         ),
@@ -196,11 +196,11 @@ impl Text {
                                 crate::render::DrawParam::default()
                                     .pos(
                                         real_rect.center()
-                                            + maths::Point::new(
+                                            + math::Point::new(
                                                 x - curr_width * 0.5,
                                                 0. + curr_height - real_rect.height() * 0.5,
                                             )
-                                            + maths::Vec2::new(0.5, 0.5) * target_size,
+                                            + math::Vec2::new(0.5, 0.5) * target_size,
                                     )
                                     .color(color_opt.unwrap_or(crate::render::Color::WHITE))
                                     .size(target_size),
@@ -212,7 +212,7 @@ impl Text {
                 }
             };
 
-        let mut total_size = maths::Vec2::ZERO;
+        let mut total_size = math::Vec2::ZERO;
 
         let mut curr_row = Vec::new();
         let mut curr_height = 0.;
@@ -339,7 +339,7 @@ impl TextBit {
     //     }
     // }
     // pub fn new_img(
-    //     sprite_id: crate::assets::sprite::SpriteId,
+    //     sprite_id: crate::assets::texture::TextureId,
     //     color_opt: Option<crate::render::Color>,
     // ) -> Self {
     //     Self::Image {
@@ -385,8 +385,8 @@ impl From<(String, crate::render::Color)> for TextBit {
     }
 }
 
-impl From<crate::assets::sprite::SpriteId> for TextBit {
-    fn from(value: crate::assets::sprite::SpriteId) -> Self {
+impl From<crate::assets::texture::TextureId> for TextBit {
+    fn from(value: crate::assets::texture::TextureId) -> Self {
         TextBit::Image {
             sprite_id: value,
             color_opt: None,
@@ -394,8 +394,8 @@ impl From<crate::assets::sprite::SpriteId> for TextBit {
     }
 }
 
-impl From<(crate::assets::sprite::SpriteId, crate::render::Color)> for TextBit {
-    fn from(value: (crate::assets::sprite::SpriteId, crate::render::Color)) -> Self {
+impl From<(crate::assets::texture::TextureId, crate::render::Color)> for TextBit {
+    fn from(value: (crate::assets::texture::TextureId, crate::render::Color)) -> Self {
         TextBit::Image {
             sprite_id: value.0,
             color_opt: Some(value.1),

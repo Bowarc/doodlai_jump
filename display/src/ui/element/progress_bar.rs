@@ -1,17 +1,29 @@
-pub struct Button {
+pub struct ProgressBar {
     id: crate::ui::Id,
     position: crate::ui::Position,
     size: crate::ui::Vector,
     state: crate::ui::State,
     style: crate::ui::style::Bundle,
+    direction: ProgressDirection,
+    max_value: f64,
+    current_value: f64,
+    ratio: f64,
 }
 
-impl Button {
+pub enum ProgressDirection {
+    Horizontal,
+    Vertical,
+}
+
+impl ProgressBar {
     pub fn new(
         id: impl Into<crate::ui::Id>,
         position: impl Into<crate::ui::Position>, // Center
         size: impl Into<crate::ui::Vector>,
         style: crate::ui::style::Bundle,
+        direction: ProgressDirection,
+        max_value: f64,
+        current_value: f64,
     ) -> Self {
         Self {
             id: id.into(),
@@ -19,11 +31,16 @@ impl Button {
             size: size.into(),
             state: crate::ui::State::default(),
             style,
+            direction,
+            max_value,
+            current_value,
+            ratio: current_value / max_value,
         }
     }
 
-    pub fn clicked_this_frame(&self) -> bool {
-        self.state.clicked_this_frame()
+    pub fn set_current_value(&mut self, new_value: f64) {
+        self.current_value = new_value;
+        self.ratio = self.current_value / self.max_value;
     }
 
     fn get_current_style(&self) -> &crate::ui::style::Bundle {
@@ -35,7 +52,7 @@ impl Button {
     }
 }
 
-impl super::TElement for Button {
+impl super::TElement for ProgressBar {
     fn draw(
         &mut self,
         ctx: &mut ggez::Context,
@@ -57,12 +74,28 @@ impl super::TElement for Button {
             border.draw(front_mesh, rect)?;
         };
 
-        // I don't really see the point of this rect, if you want a background, use the background style option.
-        // ui_mesh.rectangle(
-        //     ggez::graphics::DrawMode::fill(),
-        //     rect.into(),
-        //     (*style.get_color()).into(),
-        // )?;
+        let value_display_rect = match self.direction {
+            ProgressDirection::Horizontal => math::Rect::new(
+                rect.aa_topleft(),
+                (rect.width() * self.ratio, rect.height()),
+                0.,
+            ),
+            ProgressDirection::Vertical => {
+                let topleft = rect.aa_topleft();
+
+                math::Rect::new(
+                    (topleft.x, topleft.y + rect.height() * (1.0 - self.ratio)),
+                    (rect.width(), rect.height() * self.ratio),
+                    0.,
+                )
+            }
+        };
+
+        ui_mesh.rectangle(
+            ggez::graphics::DrawMode::fill(),
+            value_display_rect.into(),
+            (*style.get_color()).into(),
+        )?;
 
         Ok(())
     }

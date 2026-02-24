@@ -1,6 +1,3 @@
-// #![allow(dead_code)]
-// #![allow(unused_variables)]
-
 #[macro_use]
 extern crate log;
 
@@ -16,23 +13,26 @@ mod utils;
 struct Display {
     cfg: config::Config,
     renderer: render::Renderer,
-    asset_mgr: assets::AssetManager,
+    asset_mgr: assets::Assets,
     frame_stats: utils::framestats::FrameStats,
     gui_menu: gui::Gui,
-    global_ui: ui::UiManager,
+    global_ui: ui::UserInterface,
     game: game::Game,
     nn: neat::NeuralNetwork<{ ring::AGENT_IN }, { ring::AGENT_OUT }>,
+    threadpool: stp::ThreadPool,
 }
 
 impl Display {
     fn new(ctx: &mut ggez::Context, mut cfg: config::Config) -> ggez::GameResult<Self> {
+        let threadpool = stp::ThreadPool::new(2);
+
         let renderer = render::Renderer::new();
 
         let gui_menu = gui::Gui::new(ctx, &mut cfg)?;
 
-        let asset_mgr = assets::AssetManager::new();
+        let asset_mgr = assets::Assets::new(ctx, &cfg, threadpool.clone());
 
-        let mut global_ui = ui::UiManager::default();
+        let mut global_ui = ui::UserInterface::default();
 
         let _ = global_ui.add_element(
             ui::element::Element::new_graph(
@@ -43,14 +43,14 @@ impl Display {
                     render::Color::random_rgb(),
                     Some(ui::style::Background::new(
                         render::Color::from_rgba(23, 23, 23, 150),
-                        Some(assets::sprite::SpriteId::MissingNo),
+                        None,
                     )),
                     Some(ui::style::Border::new(render::Color::WHITE, 1.)),
                 ),
                 Some(
                     ui::element::GraphText::default()
                         .anchor(ui::Anchor::Topleft)
-                        .offset(maths::Vec2::ONE)
+                        .offset(math::Vec2::ONE)
                         .text(|val| -> String { format!("{}fps", val as i32) })
                         .size(5.)
                         .color(render::Color::random_rgb()),
@@ -94,39 +94,6 @@ impl Display {
             ),
             "",
         );
-        // {
-        //     let anchors = [
-        //         ui::Anchor::CenterCenter,
-        //         ui::Anchor::Topleft,
-        //         ui::Anchor::TopCenter,
-        //         ui::Anchor::TopRight,
-        //         ui::Anchor::RightCenter,
-        //         ui::Anchor::BotRight,
-        //         ui::Anchor::BotCenter,
-        //         ui::Anchor::BotLeft,
-        //         ui::Anchor::LeftCenter,
-        //     ];
-
-        //     for anchor in anchors.iter() {
-        //         global_ui.add_element(
-        //             ui::element::Element::new_button(
-        //                 format!("Anchor {anchor:?} test guide"),
-        //                 *anchor,
-        //                 ui::Vector::new(10., 10.),
-        //                 ui::Style::new(
-        //                     render::Color::from_rgba(100, 100, 100, 100),
-        //                     Some(ui::style::Background::new(
-        //                         render::Color::from_rgb(100, 100, 100),
-        //                         None,
-        //                     )),
-        //                     Some(ui::style::Border::new(render::Color::random_rgb(), 2.)),
-        //                 )
-        //                 .into(),
-        //             ),
-        //             "test",
-        //         );
-        //     }
-        // }
 
         Ok(
             Self {
@@ -141,14 +108,13 @@ impl Display {
                     neat::NeuralNetwork<{ ring::AGENT_IN }, { ring::AGENT_OUT }>,
                 >(include_str!("./nnt.json"))
                 .unwrap(),
+                threadpool,
             },
         )
     }
 }
 
 impl ggez::event::EventHandler for Display {
-    /// Called upon each logic update to the game.
-    /// This should be where the game's logic takes place.
     fn update(&mut self, ctx: &mut ggez::Context) -> ggez::GameResult {
         self.frame_stats.end_frame();
         self.frame_stats.begin_frame();
@@ -158,21 +124,13 @@ impl ggez::event::EventHandler for Display {
 
         self.game.update(dt);
 
-        // game inputs
-        // if input::pressed(ctx, input::Input::KeyboardQ) {
-        //     self.game.player_move_left()
-        // } else if input::pressed(ctx, input::Input::KeyboardD) {
-        //     self.game.player_move_right()
+        // {
+        //     if input::pressed(ctx, input::Input::KeyboardQ) {
+        //         self.game.player_move_left()
+        //     } else if input::pressed(ctx, input::Input::KeyboardD) {
+        //         self.game.player_move_right()
+        //     }
         // }
-
-        // network inputs
-
-        // println!(
-        //     "{:?}",
-        //     (self.game.player.rect.center().y as f32 - self.game.scroll as f32
-        //         + self.game.player.rect.height() as f32 / 2.)
-        //         / game::GAME_HEIGHT as f32
-        // );
         {
             let output = self.nn.predict(ring::generate_inputs(&self.game));
 
@@ -194,15 +152,6 @@ impl ggez::event::EventHandler for Display {
 
         self.global_ui.update(ctx);
 
-        // if self
-        //     .global_ui
-        //     .get_element("board square 0x0")
-        //     .inner::<ui::element::Button>()
-        //     .clicked_this_frame()
-        // {
-        //     debug!("Clicked this frame")
-        // }
-
         self.global_ui
             .get_element("fps graph")
             .inner_mut::<ui::element::Graph>()
@@ -211,10 +160,7 @@ impl ggez::event::EventHandler for Display {
         self.global_ui
             .get_element("mouse pos text")
             .inner_mut::<ui::element::Text>()
-            .replace_bits(vec![
-                format!("{:?}", ctx.mouse.position()).into(),
-                assets::sprite::SpriteId::MissingNo.into(),
-            ]);
+            .replace_bits(vec![format!("{:?}", ctx.mouse.position()).into()]);
 
         self.asset_mgr.update(ctx);
 
@@ -222,36 +168,29 @@ impl ggez::event::EventHandler for Display {
         Ok(())
     }
 
-    /// Called to do the drawing of your game.
-    /// You probably want to start this with
-    /// with [`graphics::present()`](../graphics/fn.present.html) and
-    /// maybe [`timer::yield_now()`](../timer/fn.yield_now.html).
     fn draw(&mut self, ctx: &mut ggez::Context) -> ggez::GameResult {
         self.frame_stats.begin_draw();
 
-        // let window_size: maths::Vec2 = ctx.gfx.drawable_size().into();
         ggez::graphics::Canvas::from_frame(ctx, Some(render::Color::BLACK.into())).finish(ctx)?;
 
         let render_request = self.renderer.render_request();
 
         self.frame_stats.draw(
-            maths::Point::ZERO,
+            math::Point::ZERO,
             ctx,
             render_request,
-            self.asset_mgr.get_loader().ongoing_requests(),
+            &self.threadpool
         )?;
 
         self.gui_menu.draw(ctx, render_request)?;
 
         self.global_ui.draw(ctx, render_request)?;
 
-        // Draw game
-
         for platform in self.game.platforms.iter() {
             render_request.add(
-                assets::sprite::SpriteId::GreenPlatform,
+                assets::texture::TextureId::GreenPlatform,
                 render::DrawParam::new()
-                    .pos(platform.rect.center() - maths::Vec2::new(0., self.game.scroll as f64))
+                    .pos(platform.rect.center() - math::Vec2::new(0., self.game.scroll as f64))
                     .size(platform.rect.size()),
                 render::Layer::Game,
             );
@@ -259,13 +198,12 @@ impl ggez::event::EventHandler for Display {
 
         render_request.add(
             match self.game.player.direction() {
-                0 => assets::sprite::SpriteId::DoodleRight,
-                1 => assets::sprite::SpriteId::DoodleRight,
-                -1 => assets::sprite::SpriteId::DoodleLeft,
+                0 | 1 => assets::texture::TextureId::DoodleRight,
+                -1 => assets::texture::TextureId::DoodleLeft,
                 _ => unreachable!(),
             },
             render::DrawParam::new()
-                .pos(self.game.player.rect.center() - maths::Vec2::new(0., self.game.scroll as f64))
+                .pos(self.game.player.rect.center() - math::Vec2::new(0., self.game.scroll as f64))
                 .size(self.game.player.rect.size()),
             render::Layer::Game,
         );
@@ -273,22 +211,18 @@ impl ggez::event::EventHandler for Display {
         let render_log = self.renderer.run(
             ctx,
             self.gui_menu.backend_mut(),
-            &mut self.asset_mgr.loader_handle,
-            &mut self.asset_mgr.sprite_bank,
+            &mut self.asset_mgr.texture_storage
         )?;
 
         self.frame_stats.set_render_log(render_log);
-
         self.frame_stats.end_draw();
 
         Ok(())
-        // Err(ggez::error::GameError::CustomError("This is a test".into()))
     }
 
-    /// A mouse button was pressed
     fn mouse_button_down_event(
         &mut self,
-        ctx: &mut ggez::Context,
+        _ctx: &mut ggez::Context,
         button: ggez::input::mouse::MouseButton,
         x: f32,
         y: f32,
@@ -298,7 +232,6 @@ impl ggez::event::EventHandler for Display {
         Ok(())
     }
 
-    /// A mouse button was released
     fn mouse_button_up_event(
         &mut self,
         _ctx: &mut ggez::Context,
@@ -310,8 +243,6 @@ impl ggez::event::EventHandler for Display {
         Ok(())
     }
 
-    /// The mouse was moved; it provides both absolute x and y coordinates in the window,
-    /// and relative x and y coordinates compared to its last position.
     fn mouse_motion_event(
         &mut self,
         _ctx: &mut ggez::Context,
@@ -324,7 +255,6 @@ impl ggez::event::EventHandler for Display {
         Ok(())
     }
 
-    /// mouse entered or left window area
     fn mouse_enter_or_leave(
         &mut self,
         _ctx: &mut ggez::Context,
@@ -333,8 +263,6 @@ impl ggez::event::EventHandler for Display {
         Ok(())
     }
 
-    /// The mousewheel was scrolled, vertically (y, positive away from and negative toward the user)
-    /// or horizontally (x, positive to the right and negative to the left).
     fn mouse_wheel_event(&mut self, _ctx: &mut ggez::Context, x: f32, y: f32) -> ggez::GameResult {
         self.gui_menu
             .backend_mut()
@@ -345,11 +273,6 @@ impl ggez::event::EventHandler for Display {
         Ok(())
     }
 
-    /// A keyboard button was pressed.
-    ///
-    /// The default implementation of this will call [`ctx.request_quit()`](crate::ggez::Context::request_quit)
-    /// when the escape key is pressed. If you override this with your own
-    /// event handler you have to re-implement that functionality yourself.
     fn key_down_event(
         &mut self,
         _ctx: &mut ggez::Context,
@@ -360,7 +283,6 @@ impl ggez::event::EventHandler for Display {
         Ok(())
     }
 
-    /// A keyboard button was released.
     fn key_up_event(
         &mut self,
         _ctx: &mut ggez::Context,
@@ -370,8 +292,6 @@ impl ggez::event::EventHandler for Display {
         Ok(())
     }
 
-    /// A unicode character was received, usually from keyboard input.
-    /// This is the intended way of facilitating text input.
     fn text_input_event(&mut self, _ctx: &mut ggez::Context, character: char) -> ggez::GameResult {
         self.gui_menu
             .backend_mut()
@@ -381,9 +301,6 @@ impl ggez::event::EventHandler for Display {
         Ok(())
     }
 
-    /// An event from a touchscreen has been triggered; it provides the x and y location
-    /// inside the window as well as the state of the tap (such as Started, Moved, Ended, etc)
-    /// By default, touch events will trigger mouse behavior
     fn touch_event(
         &mut self,
         _ctx: &mut ggez::Context,
@@ -394,9 +311,6 @@ impl ggez::event::EventHandler for Display {
         Ok(())
     }
 
-    /// A gamepad button was pressed; `id` identifies which gamepad.
-    /// Use [`input::gamepad()`](../input/fn.gamepad.html) to get more info about
-    /// the gamepad.
     fn gamepad_button_down_event(
         &mut self,
         _ctx: &mut ggez::Context,
@@ -406,9 +320,6 @@ impl ggez::event::EventHandler for Display {
         Ok(())
     }
 
-    /// A gamepad button was released; `id` identifies which gamepad.
-    /// Use [`input::gamepad()`](../input/fn.gamepad.html) to get more info about
-    /// the gamepad.
     fn gamepad_button_up_event(
         &mut self,
         _ctx: &mut ggez::Context,
@@ -418,9 +329,6 @@ impl ggez::event::EventHandler for Display {
         Ok(())
     }
 
-    /// A gamepad axis moved; `id` identifies which gamepad.
-    /// Use [`input::gamepad()`](../input/fn.gamepad.html) to get more info about
-    /// the gamepad.
     fn gamepad_axis_event(
         &mut self,
         _ctx: &mut ggez::Context,
@@ -431,21 +339,16 @@ impl ggez::event::EventHandler for Display {
         Ok(())
     }
 
-    /// Called when the window is shown or hidden.
     fn focus_event(&mut self, _ctx: &mut ggez::Context, _gained: bool) -> ggez::GameResult {
         Ok(())
     }
 
-    /// Called upon a quit event.  If it returns true,
-    /// the game does not exit (the quit event is cancelled).
     fn quit_event(&mut self, _ctx: &mut ggez::Context) -> ggez::GameResult<bool> {
         debug!("See you next time. . .");
 
         Ok(false)
     }
 
-    /// Called when the user resizes the window, or when it is resized
-    /// via [`graphics::set_mode()`](../graphics/fn.set_mode.html).
     fn resize_event(
         &mut self,
         _ctx: &mut ggez::Context,
@@ -455,8 +358,6 @@ impl ggez::event::EventHandler for Display {
         Ok(())
     }
 
-    /// Something went wrong, causing a `GameError`.
-    /// If this returns true, the error was fatal, so the event loop ends, aborting the game.
     fn on_error(
         &mut self,
         _ctx: &mut ggez::Context,
@@ -470,18 +371,19 @@ impl ggez::event::EventHandler for Display {
 }
 
 fn main() -> ggez::GameResult {
-    let logger_config = logger::LoggerConfig::new()
-        .set_level(log::LevelFilter::Trace)
-        .add_filter("wgpu_core", log::LevelFilter::Warn)
-        .add_filter("wgpu_hal", log::LevelFilter::Error)
-        .add_filter("gilrs", log::LevelFilter::Off)
-        .add_filter("naga", log::LevelFilter::Warn)
-        .add_filter("networking", log::LevelFilter::Debug)
-        .add_filter("ggez", log::LevelFilter::Warn);
-    logger::init(logger_config, Some("./log/display.log"));
-    // logger::test();
-
-    assets::file::list();
+    logger::init(
+        logger::Config::default()
+            .output(logger::Output::Stdout)
+            .level(log::LevelFilter::Trace)
+            .filters(&[
+                ("wgpu_core", log::LevelFilter::Warn),
+                ("wgpu_hal", log::LevelFilter::Error),
+                ("gilrs", log::LevelFilter::Off),
+                ("naga", log::LevelFilter::Warn),
+                ("networking", log::LevelFilter::Debug),
+                ("ggez", log::LevelFilter::Warn),
+            ]),
+    );
 
     let config: config::Config = config::load();
 
@@ -492,18 +394,10 @@ fn main() -> ggez::GameResult {
                 .title("Display game")
                 .samples(config.window.samples)
                 .vsync(config.window.v_sync)
-                // .icon("/icon/logoV1.png")// .icon(iconpath.as_str()), // .icon("/Python.ico"),
                 .srgb(config.window.srgb),
         )
         .window_mode(config.window.into())
         .backend(ggez::conf::Backend::Vulkan);
-
-    // if let Ok(manifest_dir) = std::env::var("CARGO_MANIFEST_DIR") {
-    //     let mut path = std::path::PathBuf::from(manifest_dir);
-    //     path.push("resources");
-    //     debug!("Adding path {:?}", path);
-    //     cb = cb.add_resource_path(path);
-    // }
 
     let (mut ctx, event_loop) = cb.build()?;
 

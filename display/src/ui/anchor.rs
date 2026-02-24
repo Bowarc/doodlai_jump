@@ -16,54 +16,54 @@ pub enum Anchor {
 
 impl Anchor {
     /// Computes and returns the center point of the element
-    pub fn compute(&self, drawable_size: maths::Point, element_size: maths::Point) -> maths::Point {
+    pub fn compute(&self, drawable_size: &math::Point, element_size: &math::Point) -> math::Point {
         match self {
-            Anchor::CenterCenter => drawable_size * 0.5,
-            Anchor::Topleft => element_size * 0.5,
-            Anchor::TopCenter => maths::Point::new(drawable_size.x * 0.5, element_size.y * 0.5),
+            Anchor::CenterCenter => *drawable_size * 0.5,
+            Anchor::Topleft => *element_size * 0.5,
+            Anchor::TopCenter => math::Point::new(drawable_size.x * 0.5, element_size.y * 0.5),
             Anchor::TopRight => {
-                maths::Point::new(drawable_size.x - element_size.x * 0.5, element_size.y * 0.5)
+                math::Point::new(drawable_size.x - element_size.x * 0.5, element_size.y * 0.5)
             }
-            Anchor::RightCenter => maths::Point::new(
+            Anchor::RightCenter => math::Point::new(
                 drawable_size.x - element_size.x * 0.5,
                 drawable_size.y * 0.5,
             ),
-            Anchor::BotRight => drawable_size - element_size * 0.5,
-            Anchor::BotCenter => maths::Point::new(
+            Anchor::BotRight => *drawable_size - *element_size * 0.5,
+            Anchor::BotCenter => math::Point::new(
                 drawable_size.x * 0.5,
                 drawable_size.y - element_size.y * 0.5,
             ),
             Anchor::BotLeft => {
-                maths::Point::new(element_size.x * 0.5, drawable_size.y - element_size.y * 0.5)
+                math::Point::new(element_size.x * 0.5, drawable_size.y - element_size.y * 0.5)
             }
-            Anchor::LeftCenter => maths::Point::new(element_size.x * 0.5, drawable_size.y * 0.5),
+            Anchor::LeftCenter => math::Point::new(element_size.x * 0.5, drawable_size.y * 0.5),
         }
 
         // match self {
         // Anchor::CenterCenter => {
-        // maths::Point::new(drawable_size.x * 0.5, drawable_size.y * 0.5)
+        // math::Point::new(drawable_size.x * 0.5, drawable_size.y * 0.5)
         // - element_size * 0.5
         // }
-        // Anchor::Topleft => maths::Point::ZERO,
+        // Anchor::Topleft => math::Point::ZERO,
         // Anchor::TopCenter => {
-        // maths::Point::new(drawable_size.x * 0.5 - element_size.x * 0.5, 0.)
+        // math::Point::new(drawable_size.x * 0.5 - element_size.x * 0.5, 0.)
         // }
-        // Anchor::TopRight => maths::Point::new(drawable_size.x - element_size.x, 0.),
-        // Anchor::RightCenter => maths::Point::new(
+        // Anchor::TopRight => math::Point::new(drawable_size.x - element_size.x, 0.),
+        // Anchor::RightCenter => math::Point::new(
         // drawable_size.x - element_size.x,
         // drawable_size.y * 0.5 - element_size.y * 0.5,
         // ),
-        // Anchor::BotRight => maths::Point::new(
+        // Anchor::BotRight => math::Point::new(
         // drawable_size.x - element_size.x,
         // drawable_size.y - element_size.y,
         // ),
-        // Anchor::BotCenter => maths::Point::new(
+        // Anchor::BotCenter => math::Point::new(
         // drawable_size.x * 0.5 - element_size.x * 0.5,
         // drawable_size.y - element_size.y,
         // ),
-        // Anchor::BotLeft => maths::Point::new(0., drawable_size.y - element_size.y),
+        // Anchor::BotLeft => math::Point::new(0., drawable_size.y - element_size.y),
         // Anchor::LeftCenter => {
-        // maths::Point::new(0., drawable_size.y * 0.5 - element_size.y * 0.5)
+        // math::Point::new(0., drawable_size.y * 0.5 - element_size.y * 0.5)
         // }
         // }
     }
@@ -76,12 +76,15 @@ impl Anchor {
                 super::Vector::new(MagicValue::ScreenSizeW * 0.5, MagicValue::ScreenSizeH * 0.5)
             }
             Anchor::Topleft => size * 0.5,
-            Anchor::TopCenter => super::Vector::new(MagicValue::ScreenSizeW * 0.5, size.y() * 0.5),
-            Anchor::TopRight => {
-                super::Vector::new(MagicValue::ScreenSizeW - size.x() * 0.5, size.y() * 0.5)
+            Anchor::TopCenter => {
+                super::Vector::new(MagicValue::ScreenSizeW * 0.5, size.y().clone() * 0.5)
             }
+            Anchor::TopRight => super::Vector::new(
+                MagicValue::ScreenSizeW - size.x().clone() * 0.5,
+                size.y().clone() * 0.5,
+            ),
             Anchor::RightCenter => super::Vector::new(
-                MagicValue::ScreenSizeW - size.x() * 0.5,
+                MagicValue::ScreenSizeW - size.x().clone() * 0.5,
                 MagicValue::ScreenSizeH * 0.5,
             ),
             Anchor::BotRight => {
@@ -89,12 +92,15 @@ impl Anchor {
             }
             Anchor::BotCenter => super::Vector::new(
                 MagicValue::ScreenSizeW * 0.5,
-                MagicValue::ScreenSizeH - size.y() * 0.5,
+                MagicValue::ScreenSizeH - size.y().clone() * 0.5,
             ),
-            Anchor::BotLeft => {
-                super::Vector::new(size.x() * 0.5, MagicValue::ScreenSizeH - size.y() * 0.5)
+            Anchor::BotLeft => super::Vector::new(
+                size.x().clone() * 0.5,
+                MagicValue::ScreenSizeH - size.y().clone() * 0.5,
+            ),
+            Anchor::LeftCenter => {
+                super::Vector::new(size.x().clone() * 0.5, MagicValue::ScreenSizeW * 0.5)
             }
-            Anchor::LeftCenter => super::Vector::new(size.x() * 0.5, MagicValue::ScreenSizeW * 0.5),
         }
 
         // match self{

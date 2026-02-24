@@ -13,28 +13,28 @@ impl Vector {
     }
 
     #[inline]
-    pub fn x(&self) -> super::Value {
-        self.x.clone()
+    pub fn x(&self) -> &super::Value {
+        &self.x
     }
     #[inline]
-    pub fn y(&self) -> super::Value {
-        self.y.clone()
+    pub fn y(&self) -> &super::Value {
+        &self.y
     }
 
-    pub fn xy(&self) -> (super::Value, super::Value) {
+    pub fn xy(&self) -> (&super::Value, &super::Value) {
         (self.x(), self.y())
     }
 
     #[inline]
-    pub fn w(&self) -> super::Value {
+    pub fn w(&self) -> &super::Value {
         self.x()
     }
     #[inline]
-    pub fn h(&self) -> super::Value {
+    pub fn h(&self) -> &super::Value {
         self.y()
     }
 
-    pub fn wh(&self) -> (super::Value, super::Value) {
+    pub fn wh(&self) -> (&super::Value, &super::Value) {
         self.xy()
     }
 }
@@ -45,8 +45,8 @@ impl Vector {
 //     }
 // }
 
-impl<T: Into<super::Value>> From<(T, T)> for Vector {
-    fn from(val: (T, T)) -> Self {
+impl<T: Into<super::Value>, U: Into<super::Value>> From<(T, U)> for Vector {
+    fn from(val: (T, U)) -> Self {
         Self::new(val.0.into(), val.1.into())
     }
 }
@@ -57,8 +57,8 @@ impl<T: Into<super::Value>> From<(T, T)> for Vector {
 //     }
 // }
 
-// impl From<(super::Anchor, maths::Vec2)> for Vector {
-//     fn from(value: (super::Anchor, maths::Vec2)) -> Self {
+// impl From<(super::Anchor, math::Vec2)> for Vector {
+//     fn from(value: (super::Anchor, math::Vec2)) -> Self {
 //         Self::new_anchor(value.0, (value.1.x, value.1.y))
 //     }
 // }

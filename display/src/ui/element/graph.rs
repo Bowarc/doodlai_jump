@@ -16,16 +16,16 @@ pub struct Graph {
 
 impl Graph {
     pub fn new(
-        id: crate::ui::Id,
-        position: crate::ui::Position,
-        size: crate::ui::Vector,
+        id: impl Into<crate::ui::Id>,
+        position: impl Into<crate::ui::Position>, // Center
+        size: impl Into<crate::ui::Vector>,
         style: crate::ui::Style,
         text: Option<GraphText>,
     ) -> Self {
         Self {
-            id,
-            position,
-            size,
+            id: id.into(),
+            position: position.into(),
+            size: size.into(),
             style,
             values: Default::default(),
             accept_timer: time::DTDelay::new(0.1),
@@ -56,7 +56,7 @@ impl Graph {
 
 pub struct GraphText {
     anchor: crate::ui::Anchor,
-    offset: maths::Vec2,
+    offset: math::Vec2,
     size: f64,
     color: crate::render::Color,
     text: fn(f64) -> String,
@@ -161,7 +161,7 @@ impl GraphText {
         self
     }
 
-    pub fn offset(mut self, new_offset: impl Into<maths::Vec2>) -> Self {
+    pub fn offset(mut self, new_offset: impl Into<math::Vec2>) -> Self {
         self.offset = new_offset.into();
         self
     }
@@ -185,7 +185,7 @@ impl Default for GraphText {
     fn default() -> Self {
         Self {
             anchor: crate::ui::Anchor::Topleft,
-            offset: maths::Vec2::ZERO,
+            offset: math::Vec2::ZERO,
             size: 10.,
             color: crate::render::Color::WHITE,
             text: |val| -> String { format!("{val:.3}") },

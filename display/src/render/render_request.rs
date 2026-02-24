@@ -1,10 +1,12 @@
+use std::collections::HashMap;
+
 pub struct RenderRequest {
-    inner: hashbrown::HashMap<super::Layer, Vec<(RenderRequestBit, super::DrawParam)>>,
+    inner: HashMap<super::Layer, Vec<(RenderRequestBit, super::DrawParam)>>,
 }
 
 #[derive(Clone, Debug)]
 pub enum RenderRequestBit {
-    Sprite(crate::assets::sprite::SpriteId),
+    Texture(crate::assets::texture::TextureId),
     Mesh(ggez::graphics::Mesh),
     MeshBuilder(ggez::graphics::MeshBuilder),
     Text(ggez::graphics::Text),
@@ -14,7 +16,7 @@ pub enum RenderRequestBit {
 impl RenderRequest {
     pub fn new() -> Self {
         Self {
-            inner: hashbrown::HashMap::with_capacity(10),
+            inner: HashMap::with_capacity(10),
         }
     }
 
@@ -59,7 +61,7 @@ impl RenderRequest {
 // }
 
 impl std::ops::Deref for RenderRequest {
-    type Target = hashbrown::HashMap<super::Layer, Vec<(RenderRequestBit, super::DrawParam)>>;
+    type Target = HashMap<super::Layer, Vec<(RenderRequestBit, super::DrawParam)>>;
 
     fn deref(&self) -> &Self::Target {
         &self.inner
@@ -73,9 +75,9 @@ impl std::ops::DerefMut for RenderRequest {
     }
 }
 
-impl From<crate::assets::sprite::SpriteId> for RenderRequestBit {
-    fn from(sprite: crate::assets::sprite::SpriteId) -> RenderRequestBit {
-        RenderRequestBit::Sprite(sprite)
+impl From<crate::assets::texture::TextureId> for RenderRequestBit {
+    fn from(texture: crate::assets::texture::TextureId) -> RenderRequestBit {
+        RenderRequestBit::Texture(texture)
     }
 }
 

@@ -55,7 +55,7 @@ impl Default for Style {
     fn default() -> Self {
         Style {
             color: crate::render::Color::from_rgb(200, 200, 200),
-            bg: None,
+            bg: Some(Background::default()),
             border: Some(Border::default()),
         }
     }

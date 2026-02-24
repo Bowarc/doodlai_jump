@@ -1,9 +1,9 @@
 #[derive(Debug, Clone, Copy)]
 pub struct DrawParam {
-    pub pos: maths::Vec2,
-    pub size: Option<maths::Vec2>,
-    pub scale: maths::Vec2,
-    pub offset: maths::Vec2,
+    pub pos: math::Vec2,
+    pub size: Option<math::Vec2>,
+    pub scale: math::Vec2,
+    pub offset: math::Vec2,
     pub rotation: f64,
     pub color: super::Color,
 }
@@ -13,23 +13,23 @@ impl DrawParam {
     pub fn new() -> Self {
         Self::default()
     }
-    pub fn pos(mut self, pos: impl Into<maths::Vec2>) -> Self {
+    pub fn pos(mut self, pos: impl Into<math::Vec2>) -> Self {
         self.pos = pos.into();
         self
     }
-    pub fn dest(mut self, dest: impl Into<maths::Vec2>) -> Self {
+    pub fn dest(mut self, dest: impl Into<math::Vec2>) -> Self {
         self.pos = dest.into();
         self
     }
-    pub fn size(mut self, size: impl Into<maths::Vec2>) -> Self {
+    pub fn size(mut self, size: impl Into<math::Vec2>) -> Self {
         self.size = Some(size.into());
         self
     }
-    pub fn scale(mut self, scale: impl Into<maths::Vec2>) -> Self {
+    pub fn scale(mut self, scale: impl Into<math::Vec2>) -> Self {
         self.scale = scale.into();
         self
     }
-    pub fn offset<T: Into<maths::Vec2>>(mut self, offset: T) -> Self {
+    pub fn offset<T: Into<math::Vec2>>(mut self, offset: T) -> Self {
         self.offset = offset.into();
         self
     }
@@ -42,18 +42,21 @@ impl DrawParam {
         self
     }
 
-    pub fn rect(mut self, rect: maths::Rect) -> Self {
+    pub fn rect(mut self, rect: math::Rect) -> Self {
         self.pos = rect.aa_topleft();
         self.size = Some(rect.size());
         self
     }
-    pub fn to_ggez_scaled(self, image_size: impl Into<maths::Point>) -> ggez::graphics::DrawParam {
+    pub fn to_ggez_scaled(
+        self,
+        image_size: impl Into<math::Point>,
+    ) -> ggez::graphics::DrawParam {
         if let Some(size) = self.size {
             let image_size = image_size.into();
             ggez::graphics::DrawParam::new()
                 .dest(self.pos)
                 .scale((size / image_size) * self.scale)
-                .offset(image_size / maths::Point::new(2., 2.) + self.offset)
+                .offset(image_size / math::Point::new(2., 2.) + self.offset)
                 .rotation(self.rotation as f32)
                 .color(self.color)
         } else {
@@ -73,10 +76,10 @@ impl DrawParam {
 impl std::default::Default for DrawParam {
     fn default() -> Self {
         Self {
-            pos: maths::Vec2::ZERO,
+            pos: math::Vec2::ZERO,
             size: None,
-            scale: maths::Vec2::ONE,
-            offset: maths::Vec2::ZERO,
+            scale: math::Vec2::ONE,
+            offset: math::Vec2::ZERO,
             rotation: 0.,
             color: [255, 255, 255, 255].into(),
         }

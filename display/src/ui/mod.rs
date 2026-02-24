@@ -1,9 +1,10 @@
+#![allow(unused)]
+
 mod anchor;
 pub mod element;
 pub mod event;
 mod group;
 mod position;
-pub mod register;
 mod state;
 pub mod style;
 pub mod value;
@@ -17,24 +18,29 @@ pub use style::Style;
 pub use value::Value;
 pub use vector::Vector;
 
-// pub type Id = id::Id;
+// pub type Id = shared::id::Id;
 pub type Id = String;
 
 #[derive(Default)]
-pub struct UiManager {
+pub struct UserInterface {
     elements: Vec<element::Element>,
     events: Vec<event::Event>,
     groups: Vec<Group>,
 }
 
-impl UiManager {
-    pub fn add_element(&mut self, elem: element::Element, group_id: impl Into<Id>) -> Id {
+impl UserInterface {
+    pub fn add_element(
+        &mut self,
+        elem: impl Into<element::Element>,
+        group_id: impl Into<Id>,
+    ) -> Id {
+        let elem = elem.into();
         let group_id = group_id.into();
         let elem_id = elem.get_id();
         // The overhead is fine, as we don't create elements often
         assert!(
             self.try_get_element(elem_id.clone()).is_none(),
-            "Ui element id collision"
+            "Trying to add an element with id: '{elem_id:?}' but an element with this id is already registered"
         );
         self.elements.push(elem);
 
@@ -99,25 +105,26 @@ impl UiManager {
 
     pub fn update(&mut self, ctx: &mut ggez::Context) {
         // Re-initializes the new frame part of the element state struct
-        self.elements.iter_mut().for_each(|el| el.on_new_frame());
+        self.elements.iter_mut().for_each(|el| {
+            el.on_new_frame();
 
-        self.events.iter().for_each(|ev| {
-            self.elements.iter_mut().for_each(|el| match *ev {
+            self.events.iter().for_each(|ev| match ev {
                 event::Event::MousePress { button, position } => {
-                    el.on_mouse_press(button, position, ctx)
+                    el.on_mouse_press(ctx, button, position)
                 }
                 event::Event::MouseRelease { button, position } => {
-                    el.on_mouse_release(button, position, ctx)
+                    el.on_mouse_release(ctx, button, position)
                 }
                 event::Event::MouseMotion { position, delta } => {
-                    el.on_mouse_motion(position, delta, ctx)
+                    el.on_mouse_motion(ctx, position, delta)
                 }
-                event::Event::MouseWheel { delta } => el.on_mouse_wheel(delta, ctx),
-                event::Event::KeyDown { key, repeated } => el.on_key_down(key, repeated, ctx),
-                event::Event::KeyUp { key } => el.on_key_up(key, ctx),
-                event::Event::TextInput { character } => el.on_text_input(character, ctx),
-            })
+                event::Event::MouseWheel { delta } => el.on_mouse_wheel(ctx, delta),
+                event::Event::KeyDown { key, repeated } => el.on_key_down(ctx, key, repeated),
+                event::Event::KeyUp { key } => el.on_key_up(ctx, key),
+                event::Event::TextInput { character } => el.on_text_input(ctx, character),
+            });
         });
+
         self.events.clear()
     }
 
@@ -159,7 +166,7 @@ impl UiManager {
 }
 
 /// Event registration
-impl UiManager {
+impl UserInterface {
     pub fn register_mouse_press(
         &mut self,
         button: ggez::input::mouse::MouseButton,
@@ -168,7 +175,7 @@ impl UiManager {
     ) {
         self.events.push(event::Event::MousePress {
             button,
-            position: maths::Point::new(x as f64, y as f64),
+            position: math::Point::new(x as f64, y as f64),
         })
     }
     pub fn register_mouse_release(
@@ -179,18 +186,18 @@ impl UiManager {
     ) {
         self.events.push(event::Event::MouseRelease {
             button,
-            position: maths::Point::new(x as f64, y as f64),
+            position: math::Point::new(x as f64, y as f64),
         })
     }
     pub fn register_mouse_motion(&mut self, x: f32, y: f32, dx: f32, dy: f32) {
         self.events.push(event::Event::MouseMotion {
-            position: maths::Point::new(x as f64, y as f64),
-            delta: maths::Vec2::new(dx as f64, dy as f64),
+            position: math::Point::new(x as f64, y as f64),
+            delta: math::Vec2::new(dx as f64, dy as f64),
         });
     }
     pub fn register_mouse_wheel(&mut self, x: f32, y: f32) {
         self.events.push(event::Event::MouseWheel {
-            delta: maths::Point::new(x as f64, y as f64),
+            delta: math::Point::new(x as f64, y as f64),
         })
     }
     pub fn register_key_down(&mut self, key: ggez::input::keyboard::KeyInput, repeated: bool) {
@@ -205,7 +212,7 @@ impl UiManager {
 }
 
 /// Getters
-impl UiManager {
+impl UserInterface {
     pub fn try_get_element(&mut self, id: impl Into<Id>) -> Option<&mut element::Element> {
         let id = id.into();
         if let Some(index) = self
@@ -230,7 +237,8 @@ impl UiManager {
         let id = id.into();
         if let Some(index) = self.groups.iter().position(|group| group.id() == &id) {
             return self.groups.get(index);
-        }
-        return None;
+        };
+
+        None
     }
 }

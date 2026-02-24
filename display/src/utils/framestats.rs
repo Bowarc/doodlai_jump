@@ -1,11 +1,16 @@
-const SPACING: &str = " ";
-const BACKGROUND_MIN_WIDTH: f32 = 272.;
+use {
+    crate::render,
+    ggez::{
+        graphics::{self, Drawable},
+        Context, GameResult,
+    },
+};
 
 pub struct FrameStats {
     update_time: time::Stopwatch,
     draw_time: time::Stopwatch,
     frame_time: time::Stopwatch,
-    render_log: crate::render::RenderLog,
+    render_log: render::RenderLog,
 }
 
 impl FrameStats {
@@ -14,7 +19,7 @@ impl FrameStats {
             update_time: time::Stopwatch::new(),
             draw_time: time::Stopwatch::new(),
             frame_time: time::Stopwatch::new(),
-            render_log: crate::render::RenderLog::new(),
+            render_log: render::RenderLog::new(),
         }
     }
     pub fn begin_frame(&mut self) {
@@ -44,86 +49,73 @@ impl FrameStats {
     pub fn draw_time(&self) -> std::time::Duration {
         self.draw_time.read()
     }
-    pub fn set_render_log(&mut self, render_log: crate::render::RenderLog) {
+    pub fn set_render_log(&mut self, render_log: render::RenderLog) {
         self.render_log = render_log
     }
-    pub fn render_log(&self) -> crate::render::RenderLog {
+    pub fn render_log(&self) -> render::RenderLog {
         self.render_log
     }
 
     pub fn draw(
         &self,
-        position: maths::Point,
-        ctx: &mut ggez::Context,
-        render_request: &mut crate::render::RenderRequest,
-        in_loading_requests: &[crate::assets::loader::Request],
-    ) -> ggez::GameResult {
-        let time_frag = self.draw_time_measurements(ctx);
-        let render_frag = self.draw_render_stats(in_loading_requests);
+        position: math::Point,
+        ctx: &mut Context,
+        render_request: &mut render::RenderRequest,
+        thread_pool: &stp::ThreadPool,
+    ) -> GameResult {
+        let spacing = " ";
+        let background_min_width = 272.;
 
-        let mut total_text = ggez::graphics::Text::new(time_frag);
+        let time_frag = graphics::TextFragment::new(format!(
+            "Time mesurements:\n{spacing}Fps        : {:.2}\n{spacing}Frame time : {}\n{spacing}Update time: {}\n{spacing}Draw time  : {}",
+            // 1./ctx.time.delta().as_secs_f64(),
+            ctx.time.fps(), // ctx.time.fps(), the first one is updating A LOT but is accurate, the latter is averaged over last 100 frames
+            time::format(&self.frame_time(), 1),
+            time::format(&self.update_time(), 1),
+            time::format(&self.draw_time(), 1),
+        ))
+        .color(graphics::Color::from_rgb(0, 150, 150));
+
+        let render_frag = graphics::TextFragment::new(format!(
+            "Render:\n{spacing}Elements  : {}\n{spacing}Sprites   : {}\n{spacing}Sprite not found: {}\n{spacing}Meshes    : {}\n{spacing}Texts     : {}\n{spacing}Draw calls: {}\n{spacing}In loading assets: {}\n{spacing}Task count: {}",
+            self.render_log.elements(),
+            self.render_log.textures(),
+            self.render_log.textures_not_found(),
+            self.render_log.meshes(),
+            self.render_log.texts(),
+            self.render_log.draw_calls(),
+            // asset_loading_debug_text,
+            "TODO",
+            thread_pool.flying_tasks_count()
+        )).color(graphics::Color::from_rgb(150,150,0));
+
+        let mut total_text = graphics::Text::new(time_frag);
         total_text.add(render_frag);
 
-        total_text.set_layout(ggez::graphics::TextLayout::top_left());
+        total_text.set_layout(graphics::TextLayout::top_left());
 
-        // let ttd = total_text.dimensions(ctx).unwrap();
+        let ttd = total_text.dimensions(ctx).unwrap();
         render_request.add(
             total_text,
-            crate::render::DrawParam::new().pos(position),
-            crate::render::Layer::Ui,
+            render::DrawParam::new().pos(position),
+            render::Layer::Ui,
         );
 
-        // render_request.add(
-        //     ggez::graphics::Mesh::new_rectangle(
-        //         ctx,
-        //         ggez::graphics::DrawMode::fill(),
-        //         maths::Rect::new(
-        //             maths::Point::new(ttd.x as f64, ttd.y as f64),
-        //             maths::Vec2::new(ttd.w.max(BACKGROUND_MIN_WIDTH) as f64, ttd.h as f64),
-        //             0.,
-        //         )
-        //         .into(),
-        //         ggez::graphics::Color::from_rgba(0, 0, 0, 200),
-        //     )?,
-        //     crate::render::DrawParam::default(),
-        //     crate::render::Layer::UiBackground,
-        // );
+        render_request.add(
+            graphics::Mesh::new_rectangle(
+                ctx,
+                graphics::DrawMode::fill(),
+                math::Rect::new(
+                    math::Point::new(ttd.x as f64, ttd.y as f64),
+                    math::Vec2::new(ttd.w.max(background_min_width) as f64, ttd.h as f64),
+                    0.,
+                )
+                .into(),
+                graphics::Color::from_rgba(0, 0, 0, 200),
+            )?,
+            render::DrawParam::default(),
+            render::Layer::UiBackground,
+        );
         Ok(())
-    }
-
-    fn draw_render_stats(
-        &self,
-        in_loading_requests: &[crate::assets::loader::Request],
-    ) -> ggez::graphics::TextFragment {
-        let mut asset_loading_debug_text = vec![];
-
-        for req in in_loading_requests {
-            asset_loading_debug_text.push(format!("{:?}", req))
-        }
-        let asset_loading_debug_text =
-            format!("{asset_loading_debug_text:#?}").replace([',', '[', ']', '"'], "");
-
-        ggez::graphics::TextFragment::new(format!(
-            "Render:\n{SPACING}Elements  : {elements}\n{SPACING}Sprites   : {sprites}\n{SPACING}Sprite not found: {sprites_not_found}\n{SPACING}Meshes    : {meshes}\n{SPACING}Texts     : {texts}\n{SPACING}Draw calls: {draw_calls}\n{SPACING}In loading assets: {in_loading_assets}\n",
-            elements = self.render_log.elements(),
-            sprites = self.render_log.sprites(),
-            sprites_not_found = self.render_log.sprites_not_found(),
-            meshes = self.render_log.meshes(),
-            texts= self.render_log.texts(),
-            draw_calls= self.render_log.draw_calls(),
-            in_loading_assets= asset_loading_debug_text,
-        )).color(ggez::graphics::Color::from_rgb(150,150,0))
-    }
-
-    fn draw_time_measurements(&self, ctx: &ggez::Context) -> ggez::graphics::TextFragment {
-        ggez::graphics::TextFragment::new(format!(
-            "Time mesurements:\n{SPACING}Fps        : {fps:.2}\n{SPACING}Frame time : {frame_time}\n{SPACING}Update time: {update_time}\n{SPACING}Draw time  : {draw_time}\n",
-            // 1./ctx.time.delta().as_secs_f64(),
-            fps = ctx.time.fps(), // ctx.time.fps(), the first one is updating A LOT but is accurate, the latter is averaged over last 100 frames
-            frame_time = time::format(self.frame_time(), 1),
-            update_time = time::format(self.update_time(), 1),
-            draw_time = time::format(self.draw_time(), 1),
-        ))
-        .color(ggez::graphics::Color::from_rgb(0, 150, 150))
     }
 }

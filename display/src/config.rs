@@ -1,8 +1,6 @@
-use crate::assets;
-// config file are in external fs
+use crate::assets::{self, file::Path};
 
-const USER_CONFIG_FILE: assets::file::ConsPath = assets::file::ConsPath::new(
-    assets::file::FileSystem::External,
+const USER_CONFIG_FILE: Path = Path::new(
     "config/globalConfig.ron",
 );
 
@@ -89,7 +87,7 @@ pub fn load() -> Config {
     // check config/default/ for default config, then check for a user one
     // Not done like this for now
 
-    let config = match assets::file::try_bytes(USER_CONFIG_FILE.into()) {
+    let config = match assets::file::try_bytes(USER_CONFIG_FILE) {
         Ok(bytes) => match ron::de::from_bytes(&bytes) {
             Ok(s) => s,
             Err(e) => {

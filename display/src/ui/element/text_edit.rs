@@ -12,17 +12,17 @@ pub struct TextEdit {
 
 impl TextEdit {
     pub fn new(
-        id: crate::ui::Id,
-        position: crate::ui::Position,
-        width: crate::ui::Value,
+        id: impl Into<crate::ui::Id>,
+        position: impl Into<crate::ui::Position>, // Center
+        width: impl Into<crate::ui::Value>,
         rows: u64,
         font_size: f64,
         style: crate::ui::style::Bundle,
     ) -> Self {
         Self {
-            id,
-            position,
-            width,
+            id: id.into(),
+            position: position.into(),
+            width: width.into(),
             rows,
             font_size,
             size: crate::ui::Vector::new(0., 0.),
@@ -72,7 +72,9 @@ impl super::TElement for TextEdit {
 
         render_request.add(
             text,
-            crate::render::DrawParam::default().rect(rect),
+            crate::render::DrawParam::default()
+                .pos(rect.aa_topleft())
+                .size(rect.size()),
             crate::render::Layer::Ui,
         );
 
@@ -101,11 +103,11 @@ impl super::TElement for TextEdit {
     }
     fn on_mouse_press(
         &mut self,
-        _button: ggez::input::mouse::MouseButton,
-        position: maths::Point,
         ctx: &mut ggez::Context,
+        _button: &ggez::input::mouse::MouseButton,
+        position: &math::Point,
     ) {
-        if maths::collision::point_rect(position, self.get_computed_rect(ctx)) {
+        if math::collision::point_rect(position, &self.get_computed_rect(ctx)) {
             self.state.mouse_press_self()
         } else {
             self.state.mouse_press_not_self()
@@ -113,11 +115,11 @@ impl super::TElement for TextEdit {
     }
     fn on_mouse_release(
         &mut self,
-        _button: ggez::input::mouse::MouseButton,
-        position: maths::Point,
         ctx: &mut ggez::Context,
+        _button: &ggez::input::mouse::MouseButton,
+        position: &math::Point,
     ) {
-        if maths::collision::point_rect(position, self.get_computed_rect(ctx)) {
+        if math::collision::point_rect(position, &self.get_computed_rect(ctx)) {
             self.state.mouse_release_self()
         } else {
             self.state.mouse_release_not_self()
@@ -125,18 +127,18 @@ impl super::TElement for TextEdit {
     }
     fn on_mouse_motion(
         &mut self,
-        position: maths::Point,
-        _delta: maths::Point,
         ctx: &mut ggez::Context,
+        position: &math::Point,
+        _delta: &math::Point,
     ) {
-        if maths::collision::point_rect(position, self.get_computed_rect(ctx)) {
+        if math::collision::point_rect(position, &self.get_computed_rect(ctx)) {
             self.state.mouse_hover_self()
         } else {
             self.state.mouse_hover_not_self()
         }
     }
 
-    fn on_text_input(&mut self, character: char, _ctx: &mut ggez::Context) {
+    fn on_text_input(&mut self, ctx: &mut ggez::Context, character: &char) {
         if !self.state.focussed() {
             return;
         }
@@ -150,7 +152,7 @@ impl super::TElement for TextEdit {
             '\u{5B}'..='\u{60}' | /* [\]^_` */
             '\u{61}'..='\u{7A}' | /* abcdefghijklmnopqrstuvwxy */
             '\u{7B}'..='\u{7E}'   /* {|}~ */ => {
-                self.txt.push(character)
+                self.txt.push(*character)
             },
             '\u{d}' | '\u{a}' /* New line caracterS */ => {
                 // I don't like having to check for both but i have to
@@ -158,7 +160,7 @@ impl super::TElement for TextEdit {
 
                 // debug!("{new_line_count} | {}", self.rows -1);
                 if new_line_count < self.rows -1{
-                    self.txt.push(character)
+                    self.txt.push(*character)
                 }
             },
             '\u{8}' /* Delete */ => {

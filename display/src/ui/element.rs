@@ -1,12 +1,14 @@
 mod button;
 mod graph;
 mod image;
+mod progress_bar;
 mod text;
 mod text_edit;
 
 pub use button::Button;
 pub use graph::{Graph, GraphText};
 pub use image::Image;
+pub use progress_bar::{ProgressBar, ProgressDirection};
 pub use text::{Text, TextBit};
 pub use text_edit::TextEdit;
 
@@ -17,6 +19,7 @@ pub enum Element {
     Text,
     TextEdit,
     Image,
+    ProgressBar,
 }
 
 #[enum_dispatch::enum_dispatch]
@@ -43,30 +46,30 @@ pub trait TElement: std::any::Any {
         ↓
     */
 
-    fn get_computed_size(&self, ctx: &mut ggez::Context) -> maths::Vec2 {
+    fn get_computed_size(&self, ctx: &mut ggez::Context) -> math::Vec2 {
         let sizev = self.get_size_value();
 
-        maths::Point::new(sizev.x().compute(ctx), sizev.y().compute(ctx))
+        math::Point::new(sizev.x().compute(ctx), sizev.y().compute(ctx))
     }
 
     fn get_computed_pos(
         &self,
         ctx: &mut ggez::Context,
-        size_opt: Option<maths::Vec2>,
-    ) -> maths::Point {
+        size_opt: Option<math::Vec2>,
+    ) -> math::Point {
         let posv = self.get_pos_value();
 
         let size = size_opt.unwrap_or_else(|| self.get_computed_size(ctx));
 
-        posv.compute(ctx, size)
+        posv.compute(ctx, &size)
     }
 
-    fn get_computed_rect(&self, ctx: &mut ggez::Context) -> maths::Rect {
+    fn get_computed_rect(&self, ctx: &mut ggez::Context) -> math::Rect {
         let size = self.get_computed_size(ctx);
 
         let position = self.get_computed_pos(ctx, Some(size));
 
-        maths::Rect::new_from_center(position, size, 0.)
+        math::Rect::new_from_center(position, size, 0.)
     }
 
     /*
@@ -75,53 +78,45 @@ pub trait TElement: std::any::Any {
 
     fn on_mouse_press(
         &mut self,
-        _button: ggez::input::mouse::MouseButton,
-        _position: maths::Point,
-        _ctx: &mut ggez::Context,
+        _: &mut ggez::Context,
+        _: &ggez::input::mouse::MouseButton,
+        _: &math::Point,
     ) {
     }
     fn on_mouse_release(
         &mut self,
-        _button: ggez::input::mouse::MouseButton,
-        _position: maths::Point,
-        _ctx: &mut ggez::Context,
+        _: &mut ggez::Context,
+        _: &ggez::input::mouse::MouseButton,
+        _: &math::Point,
     ) {
     }
-    fn on_mouse_motion(
-        &mut self,
-        _position: maths::Point,
-        _delta: maths::Point,
-        _ctx: &mut ggez::Context,
-    ) {
-    }
-    fn on_mouse_wheel(&mut self, _delta: maths::Point, _ctx: &mut ggez::Context) {}
+    fn on_mouse_motion(&mut self, _: &mut ggez::Context, _: &math::Point, _: &math::Point) {}
+    fn on_mouse_wheel(&mut self, _: &mut ggez::Context, _: &math::Point) {}
     fn on_key_down(
         &mut self,
-        _key: ggez::input::keyboard::KeyInput,
-        _repeated: bool,
-        _ctx: &mut ggez::Context,
+        _: &mut ggez::Context,
+        _: &ggez::input::keyboard::KeyInput,
+        _: &bool,
     ) {
     }
-    fn on_key_up(&mut self, _key: ggez::input::keyboard::KeyInput, _ctx: &mut ggez::Context) {}
-    fn on_text_input(&mut self, _character: char, _ctx: &mut ggez::Context) {}
+    fn on_key_up(&mut self, _: &mut ggez::Context, _: &ggez::input::keyboard::KeyInput) {}
+    fn on_text_input(&mut self, _: &mut ggez::Context, _: &char) {}
     fn on_new_frame(&mut self) {}
 }
 
 /// Constructors
 impl Element {
+    #[inline]
     pub fn new_button(
         id: impl Into<super::Id>,
         position: impl Into<super::Position>, // Center
         size: impl Into<super::Vector>,
         style: super::style::Bundle,
     ) -> Self {
-        Self::Button(button::Button::new(
-            id.into(),
-            position.into(),
-            size.into(),
-            style,
-        ))
+        Self::Button(button::Button::new(id, position, size, style))
     }
+
+    #[inline]
     pub fn new_graph(
         id: impl Into<super::Id>,
         position: impl Into<super::Position>, // Center
@@ -129,14 +124,10 @@ impl Element {
         style: super::Style,
         text: Option<graph::GraphText>,
     ) -> Self {
-        Self::Graph(graph::Graph::new(
-            id.into(),
-            position.into(),
-            size.into(),
-            style,
-            text,
-        ))
+        Self::Graph(graph::Graph::new(id, position, size, style, text))
     }
+
+    #[inline]
     pub fn new_text(
         id: impl Into<super::Id>,
         position: impl Into<super::Position>, // Center
@@ -145,8 +136,10 @@ impl Element {
         parts: Vec<TextBit>,
     ) -> Self {
         let size = size.into();
-        Self::Text(Text::new(id.into(), position.into(), size, style, parts))
+        Self::Text(Text::new(id, position, size, style, parts))
     }
+
+    #[inline]
     pub fn new_text_edit(
         id: impl Into<super::Id>,
         position: impl Into<super::Position>, // Center
@@ -155,29 +148,18 @@ impl Element {
         font_size: f64,
         style: super::style::Bundle,
     ) -> Self {
-        Self::TextEdit(TextEdit::new(
-            id.into(),
-            position.into(),
-            width.into(),
-            rows,
-            font_size,
-            style,
-        ))
+        Self::TextEdit(TextEdit::new(id, position, width, rows, font_size, style))
     }
+
+    #[inline]
     pub fn new_image(
         id: impl Into<super::Id>,
         position: impl Into<super::Position>, // Center
         size: impl Into<super::Vector>,
         style: super::Style,
-        image: crate::assets::sprite::SpriteId,
+        image: crate::assets::texture::TextureId,
     ) -> Self {
-        Self::Image(image::Image::new(
-            id.into(),
-            position.into(),
-            size.into(),
-            style,
-            image,
-        ))
+        Self::Image(image::Image::new(id, position, size, style, image))
     }
 }
 
@@ -193,6 +175,7 @@ impl Element {
             Self::Text(inner) => (inner as &dyn std::any::Any).downcast_ref(),
             Self::TextEdit(inner) => (inner as &dyn std::any::Any).downcast_ref(),
             Self::Image(inner) => (inner as &dyn std::any::Any).downcast_ref(),
+            Self::ProgressBar(inner) => (inner as &dyn std::any::Any).downcast_ref(),
         }
     }
     pub fn inner<T: TElement>(&self) -> &T {
@@ -206,6 +189,7 @@ impl Element {
             Self::Text(inner) => (inner as &mut dyn std::any::Any).downcast_mut(),
             Self::TextEdit(inner) => (inner as &mut dyn std::any::Any).downcast_mut(),
             Self::Image(inner) => (inner as &mut dyn std::any::Any).downcast_mut(),
+            Self::ProgressBar(inner) => (inner as &mut dyn std::any::Any).downcast_mut(),
         }
     }
     pub fn inner_mut<T: TElement>(&mut self) -> &mut T {
@@ -219,6 +203,7 @@ impl Element {
             Self::Text(inner) => inner,
             Self::TextEdit(inner) => inner,
             Self::Image(inner) => inner,
+            Self::ProgressBar(inner) => inner,
         }
     }
     pub fn inner_as_trait_mut(&mut self) -> &mut dyn TElement {
@@ -228,6 +213,7 @@ impl Element {
             Self::Text(inner) => inner,
             Self::TextEdit(inner) => inner,
             Self::Image(inner) => inner,
+            Self::ProgressBar(inner) => inner,
         }
     }
 
@@ -239,18 +225,6 @@ impl Element {
     //     }
     // }
 }
-macro_rules! gen_trait_fn_refmut {
-    ($fn_name:ident $(, $arg:ident : $arg_ty:ty)* => $ret_ty:ty) => {
-        pub fn $fn_name(&mut self, $($arg : $arg_ty),*) -> $ret_ty {
-            self.inner_as_trait_mut().$fn_name($($arg),*)
-        }
-    };
-    ($fn_name:ident => $ret_ty:ty) => {
-        pub fn $fn_name(&mut self) -> $ret_ty {
-            self.inner_as_trait().$fn_name()
-        }
-    };
-}
 
 macro_rules! gen_trait_fn_ref{
     ($fn_name:ident $(, $arg:ident : $arg_ty:ty)* => $ret_ty:ty) => {
@@ -260,6 +234,19 @@ macro_rules! gen_trait_fn_ref{
     };
     ($fn_name:ident => $ret_ty:ty) => {
         pub fn $fn_name(&self) -> $ret_ty {
+            self.inner_as_trait().$fn_name()
+        }
+    };
+}
+
+macro_rules! gen_trait_fn_refmut {
+    ($fn_name:ident $(, $arg:ident : $arg_ty:ty)* => $ret_ty:ty) => {
+        pub fn $fn_name(&mut self, $($arg : $arg_ty),*) -> $ret_ty {
+            self.inner_as_trait_mut().$fn_name($($arg),*)
+        }
+    };
+    ($fn_name:ident => $ret_ty:ty) => {
+        pub fn $fn_name(&mut self) -> $ret_ty {
             self.inner_as_trait().$fn_name()
         }
     };
@@ -295,11 +282,11 @@ macro_rules! gen_trait_fn_ref{
 impl Element {
     gen_trait_fn_refmut!(
         draw,
-        _ctx: &mut ggez::Context,
-        _back: &mut ggez::graphics::MeshBuilder,
-        _ui: &mut ggez::graphics::MeshBuilder,
-        _front: &mut ggez::graphics::MeshBuilder,
-        _render_request: &mut crate::render::RenderRequest
+        ctx: &mut ggez::Context,
+        back: &mut ggez::graphics::MeshBuilder,
+        ui: &mut ggez::graphics::MeshBuilder,
+        front: &mut ggez::graphics::MeshBuilder,
+        render_request: &mut crate::render::RenderRequest
         => ggez::GameResult
     );
     gen_trait_fn_ref!(
@@ -325,19 +312,18 @@ impl Element {
     gen_trait_fn_ref!(
         get_computed_size,
         ctx: &mut ggez::Context
-        => maths::Vec2
+        => math::Vec2
     );
     gen_trait_fn_ref!(
         get_computed_pos,
         ctx: &mut ggez::Context,
-        size_opt: Option<maths::Vec2>
-        => maths::Point
+        size_opt: Option<math::Vec2>
+        => math::Point
     );
     gen_trait_fn_ref!(
         get_computed_rect,
-
         ctx: &mut ggez::Context
-        => maths::Rect
+        => math::Rect
     );
 
     /*
@@ -345,50 +331,48 @@ impl Element {
     */
     gen_trait_fn_refmut!(
         on_mouse_press,
-        _button: ggez::input::mouse::MouseButton,
-        _position: maths::Point,
-        _ctx: &mut ggez::Context
+        ctx: &mut ggez::Context,
+        button: &ggez::input::mouse::MouseButton,
+        position: &math::Point
         => ()
     );
     gen_trait_fn_refmut!(
-
         on_mouse_release,
-        _button: ggez::input::mouse::MouseButton,
-        _position: maths::Point,
-        _ctx: &mut ggez::Context
+        ctx: &mut ggez::Context,
+        button: &ggez::input::mouse::MouseButton,
+        position: &math::Point
         => ()
     );
     gen_trait_fn_refmut!(
-
         on_mouse_motion,
-        _position: maths::Point,
-        _delta: maths::Point,
-        _ctx: &mut ggez::Context
+        ctx: &mut ggez::Context,
+        position: &math::Point,
+        delta: &math::Point
         => ()
     );
     gen_trait_fn_refmut!(
         on_mouse_wheel,
-        _delta: maths::Point,
-        _ctx: &mut ggez::Context
+        ctx: &mut ggez::Context,
+        delta: &math::Point
         => ()
     );
     gen_trait_fn_refmut!(
         on_key_down,
-        _key: ggez::input::keyboard::KeyInput,
-        _repeated: bool,
-        _ctx: &mut ggez::Context
+        ctx: &mut ggez::Context,
+        key: &ggez::input::keyboard::KeyInput,
+        repeated: &bool
         => ()
     );
     gen_trait_fn_refmut!(
         on_key_up,
-        _key: ggez::input::keyboard::KeyInput,
-        _ctx: &mut ggez::Context
+        ctx: &mut ggez::Context,
+        key: &ggez::input::keyboard::KeyInput
         => ()
     );
     gen_trait_fn_refmut!(
         on_text_input,
-        _character: char,
-        _ctx: &mut ggez::Context
+        ctx: &mut ggez::Context,
+        character: &char
         => ()
     );
     gen_trait_fn_refmut!(

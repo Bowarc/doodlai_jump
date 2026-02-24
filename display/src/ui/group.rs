@@ -14,7 +14,7 @@ impl Group {
         &self.id
     }
 
-    pub fn elems(&self) -> &Vec<super::Id> {
+    pub fn elems(&self) -> &[super::Id] {
         &self.elems
     }
 

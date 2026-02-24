@@ -6,9 +6,12 @@ mod render_request;
 
 pub use color::Color;
 pub use draw_param::DrawParam;
+use ggez::graphics;
 pub use layer::Layer;
 pub use render_log::RenderLog;
 pub use render_request::{RenderRequest, RenderRequestBit};
+
+use crate::assets::texture;
 
 pub struct Renderer {
     render_request: RenderRequest,
@@ -35,11 +38,7 @@ impl Renderer {
         &mut self,
         ctx: &mut ggez::Context,
         menu_backend: &mut ggegui::EguiBackend,
-        loader_handle: &mut crate::assets::loader::Handle,
-        sprite_bank: &mut impl crate::assets::Bank<
-            crate::assets::sprite::SpriteId,
-            ggez::graphics::InstanceArray,
-        >,
+        texture_storage: &mut texture::Storage,
     ) -> ggez::GameResult<RenderLog> {
         let mut layer_index = 0;
         let mut global_log = RenderLog::new();
@@ -52,14 +51,7 @@ impl Renderer {
 
             let mut canvas = ggez::graphics::Canvas::from_frame(ctx, None);
 
-            global_log += Self::_run(
-                ctx,
-                &mut canvas,
-                bits,
-                menu_backend,
-                loader_handle,
-                sprite_bank,
-            );
+            global_log += Self::_run(ctx, &mut canvas, bits, menu_backend, texture_storage);
 
             canvas.finish(ctx)?;
         }
@@ -73,69 +65,57 @@ impl Renderer {
         canvas: &mut ggez::graphics::Canvas,
         bits: &mut [(render_request::RenderRequestBit, DrawParam)],
         menu_backend: &mut ggegui::EguiBackend,
-        loader_handle: &mut crate::assets::loader::Handle,
-        sprite_bank: &mut impl crate::assets::Bank<
-            crate::assets::sprite::SpriteId,
-            ggez::graphics::InstanceArray,
-        >,
+        texture_storage: &mut texture::Storage,
     ) -> RenderLog {
-        use ggez::graphics::Drawable as _;
-        // 'log' is already taken by the log crate, fuck you
         let mut log = RenderLog::new();
 
-        let mut sprites_used = Vec::<crate::assets::sprite::SpriteId>::new();
-
-        for (bit, dp) in bits {
+        let mut used_textures: Vec<texture::TextureId> = Vec::new();
+        for (bit, dp) in bits.iter_mut() {
             match bit {
-                RenderRequestBit::Sprite(id) => {
-                    /*
-                        Here appends something interesing,
-                        If the requested id is not yet loaded, the default InstanceArray retrieved (auto by try_get_mut)
+                RenderRequestBit::Texture(texture) => {
+                    let ia = texture_storage
+                        .get(ctx, texture)
+                        .unwrap_or_else(|fallback| {
+                            log.on_texture_not_found();
+                            fallback
+                        });
 
-                        And then the id (that we fail to fetch) is sent to sprites_used (BUT WE DIDDN'T USED THAT InstanceArray)
-                        Then, using the ids from sprites_used (that the renderer thinks it used) queries again (but faills)
-                        so the default InstanceArray is retrieved and cleaned.
+                    let img = ia.image();
 
-                        There is no sprite bank update between thoses queries, so it's working.
-
-                        This could be fixed by 2 things
-                        1) Return None when the given Id is not yet loaded,
-                            But i like using default sprites for things that are not yet loaded.
-                        2) Find a way for the renderer to know that the querry failled and the id isn't the right one.
-                    */
-                    let Some(ia) = sprite_bank.try_get_mut(id, loader_handle) else {
-                        error!("Could not get instance array for sprite {id:?}");
-                        continue;
-                    };
-                    let Some(dimensions) = ia.image().dimensions(ctx) else {
-                        error!("Could not query the size of the image for sprite {id:?}");
-                        continue;
-                    };
-                    ia.push(dp.to_ggez_scaled(dimensions.size()));
-
-                    if !sprites_used.contains(id) {
-                        sprites_used.push(*id)
+                    ia.push(dp.to_ggez_scaled((img.width(), img.height())));
+                    log.on_texture();
+                    if !used_textures.contains(texture) {
+                        used_textures.push(*texture);
                     }
-
-                    log.on_sprite();
-                    sprites_used.push(*id)
                 }
                 RenderRequestBit::Mesh(mesh) => {
-                    canvas.draw(mesh, dp.to_ggez_unscaled());
                     log.on_mesh();
+                    // let dp = dp.offset((0.5, 0.5));
+                    // debug!("mesh offset: {}", dp.offset); // last test says that meshes don't have any offset (even when rotated) and works fine (also it appears that thoses offsets are in px and not %)
+                    canvas.draw(mesh, dp.to_ggez_unscaled());
                     log.on_draw_call();
                 }
-                RenderRequestBit::MeshBuilder(mesh_buuilder) => {
+                RenderRequestBit::MeshBuilder(meshbuilder) => {
+                    log.on_mesh();
+                    // let dp = dp.offset((0.5, 0.5));
+                    // debug!("mesh offset: {}", dp.offset); // last test says that meshes don't have any offset (even when rotated) and works fine (also it appears that thoses offsets are in px and not %)
                     canvas.draw(
-                        &ggez::graphics::Mesh::from_data(ctx, mesh_buuilder.build()),
+                        &ggez::graphics::Mesh::from_data(ctx, meshbuilder.build()),
                         dp.to_ggez_unscaled(),
                     );
-                    log.on_mesh();
                     log.on_draw_call();
                 }
                 RenderRequestBit::Text(text) => {
-                    canvas.draw(text, dp.to_ggez_unscaled());
+                    use ggez::graphics::Drawable as _;
                     log.on_text();
+                    canvas.draw(
+                        text,
+                        if let Some(dimensions) = text.dimensions(ctx).map(|d| d.size()) {
+                            dp.to_ggez_scaled(dimensions)
+                        } else {
+                            dp.to_ggez_unscaled()
+                        },
+                    );
                     log.on_draw_call();
                 }
                 RenderRequestBit::EguiWindow => {
@@ -146,11 +126,11 @@ impl Renderer {
             }
         }
 
-        for id in sprites_used.iter() {
-            // The implicit unwrap of get_mut is fine as any sprite in this list has been queried before so it *should* be loaded
-            let ia = sprite_bank.get_mut(id, loader_handle);
-
-            canvas.draw(ia, DrawParam::default());
+        for texture_id in used_textures {
+            let ia = texture_storage
+                .get(ctx, &texture_id)
+                .unwrap_or_else(|fallback| fallback);
+            canvas.draw(ia, graphics::DrawParam::new());
             log.on_draw_call();
             ia.clear()
         }

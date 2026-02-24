@@ -3,21 +3,21 @@ pub struct Image {
     position: crate::ui::Position,
     size: crate::ui::Vector,
     style: crate::ui::Style,
-    image: crate::assets::sprite::SpriteId,
+    image: crate::assets::texture::TextureId,
 }
 
 impl Image {
     pub fn new(
-        id: crate::ui::Id,
-        position: crate::ui::Position,
-        size: crate::ui::Vector,
+        id: impl Into<crate::ui::Id>,
+        position: impl Into<crate::ui::Position>, // Center
+        size: impl Into<crate::ui::Vector>,
         style: crate::ui::Style,
-        image: crate::assets::sprite::SpriteId,
+        image: crate::assets::texture::TextureId,
     ) -> Self {
         Self {
-            id,
-            position,
-            size,
+            id: id.into(),
+            position: position.into(),
+            size: size.into(),
             style,
             image,
         }
@@ -29,7 +29,7 @@ impl super::TElement for Image {
         &mut self,
         ctx: &mut ggez::Context,
         back_mesh: &mut ggez::graphics::MeshBuilder,
-        _ui_mesh: &mut ggez::graphics::MeshBuilder,
+        ui_mesh: &mut ggez::graphics::MeshBuilder,
         front_mesh: &mut ggez::graphics::MeshBuilder,
         render_request: &mut crate::render::RenderRequest,
     ) -> ggez::GameResult {
@@ -48,7 +48,7 @@ impl super::TElement for Image {
         render_request.add(
             self.image,
             crate::render::DrawParam::default()
-                .dest(rect.center())
+                .pos(rect.center())
                 .size(rect.size())
                 .color(*self.style.get_color()),
             crate::render::Layer::Ui,

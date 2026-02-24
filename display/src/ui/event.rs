@@ -2,18 +2,18 @@
 pub enum Event {
     MousePress {
         button: ggez::input::mouse::MouseButton,
-        position: maths::Point,
+        position: math::Point,
     },
     MouseRelease {
         button: ggez::input::mouse::MouseButton,
-        position: maths::Point,
+        position: math::Point,
     },
     MouseMotion {
-        position: maths::Point,
-        delta: maths::Vec2,
+        position: math::Point,
+        delta: math::Vec2,
     },
     MouseWheel {
-        delta: maths::Point,
+        delta: math::Point,
     },
     KeyDown {
         key: ggez::input::keyboard::KeyInput,

@@ -1,11 +1,14 @@
 #[derive(Debug, Clone, Copy)]
 pub struct Background {
     color: crate::render::Color,
-    img: Option<crate::assets::sprite::SpriteId>,
+    img: Option<crate::assets::texture::TextureId>,
 }
 
 impl Background {
-    pub fn new(color: crate::render::Color, img: Option<crate::assets::sprite::SpriteId>) -> Self {
+    pub fn new(
+        color: crate::render::Color,
+        img: Option<crate::assets::texture::TextureId>,
+    ) -> Self {
         Self { color, img }
     }
 
@@ -17,11 +20,11 @@ impl Background {
         &self.color
     }
 
-    pub fn get_img_mut(&mut self) -> Option<&mut crate::assets::sprite::SpriteId> {
+    pub fn get_img_mut(&mut self) -> Option<&mut crate::assets::texture::TextureId> {
         self.img.as_mut()
     }
 
-    pub fn get_img(&self) -> Option<&crate::assets::sprite::SpriteId> {
+    pub fn get_img(&self) -> Option<&crate::assets::texture::TextureId> {
         self.img.as_ref()
     }
 
@@ -29,7 +32,7 @@ impl Background {
         &self,
         mesh: &mut ggez::graphics::MeshBuilder,
         render_request: &mut crate::render::RenderRequest,
-        element_rect: maths::Rect,
+        element_rect: math::Rect,
     ) -> ggez::GameResult {
         if let Some(sprite_id) = self.get_img() {
             render_request.add(
