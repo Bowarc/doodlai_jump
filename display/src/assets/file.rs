@@ -27,14 +27,14 @@ impl std::fmt::Display for Path {
 
 fn external_path(p: &str) -> String {
     if let Ok(cargo_manifest_dir) = std::env::var("CARGO_MANIFEST_DIR") {
-        format!("{}/resources/external/{}", cargo_manifest_dir, p)
+        format!("{}/resources/{}", cargo_manifest_dir, p)
     } else {
         let Ok(mut exe_path) = std::env::current_exe() else {
             panic!("Failed to get current executable path");
         };
         exe_path.pop();
 
-        format!("{}/resources/external/{}", exe_path.display(), p)
+        format!("{}/resources/{}", exe_path.display(), p)
     }
     .replace("\\", "/")
     .replace("//", "/")
@@ -45,9 +45,10 @@ pub fn try_bytes(path: impl Into<Path>) -> Result<std::borrow::Cow<'static, [u8]
     let path = path.into();
 
     let stopwatch = time::Stopwatch::start_new();
-    let start_info_message = format!("Loading /{}", path.p);
 
     let complete_path = external_path(&path.p);
+    let start_info_message = format!("Loading {}", complete_path);
+
 
     match std::fs::File::open(complete_path) {
         Ok(mut file) => {
@@ -58,7 +59,7 @@ pub fn try_bytes(path: impl Into<Path>) -> Result<std::borrow::Cow<'static, [u8]
         }
         Err(e) => {
             // format!("Could not open path: {:?}, {}", path.fs, path.p);
-            // error!("{} . . error: {e}", start_info_message);
+            error!("{} . . error: {e}", start_info_message);
             Err(e)
         }
     }

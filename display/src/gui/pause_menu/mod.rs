@@ -24,14 +24,15 @@ impl OverTimeValues {
             supported_resolutions: {
                 let mut r = Vec::new();
 
-                let supported_res: Vec<ggez::winit::dpi::PhysicalSize<u32>> =
-                    ctx.gfx.supported_resolutions().collect();
+                // TODO: Fix this being broken on my machine (COSMIC DE Wayland)
+                // let supported_res: Vec<ggez::winit::dpi::PhysicalSize<u32>> =
+                //     ctx.gfx.supported_resolutions().collect();
 
-                for res in supported_res {
-                    if !r.contains(&res) {
-                        r.push(res)
-                    }
-                }
+                // for res in supported_res {
+                //     if !r.contains(&res) {
+                //         r.push(res)
+                //     }
+                // }
                 r
             },
             selected_fullscreen_type: cfg.window.fullscreen_type,

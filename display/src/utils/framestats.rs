@@ -52,9 +52,6 @@ impl FrameStats {
     pub fn set_render_log(&mut self, render_log: render::RenderLog) {
         self.render_log = render_log
     }
-    pub fn render_log(&self) -> render::RenderLog {
-        self.render_log
-    }
 
     pub fn draw(
         &self,
@@ -67,7 +64,7 @@ impl FrameStats {
         let background_min_width = 272.;
 
         let time_frag = graphics::TextFragment::new(format!(
-            "Time mesurements:\n{spacing}Fps        : {:.2}\n{spacing}Frame time : {}\n{spacing}Update time: {}\n{spacing}Draw time  : {}",
+            "Time mesurements:\n{spacing}Fps        : {:.2}\n{spacing}Frame time : {}\n{spacing}Update time: {}\n{spacing}Draw time  : {}\n",
             // 1./ctx.time.delta().as_secs_f64(),
             ctx.time.fps(), // ctx.time.fps(), the first one is updating A LOT but is accurate, the latter is averaged over last 100 frames
             time::format(&self.frame_time(), 1),

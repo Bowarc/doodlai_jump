@@ -29,7 +29,7 @@ impl Display {
         let renderer = render::Renderer::new();
 
         let gui_menu = gui::Gui::new(ctx, &mut cfg)?;
-
+        
         let asset_mgr = assets::Assets::new(ctx, &cfg, threadpool.clone());
 
         let mut global_ui = ui::UserInterface::default();
@@ -150,7 +150,7 @@ impl ggez::event::EventHandler for Display {
             .inner_mut::<ui::element::Text>()
             .replace_bits(vec![format!("{}", self.game.score()).into()]);
 
-        self.global_ui.update(ctx);
+        // self.global_ui.update(ctx);
 
         self.global_ui
             .get_element("fps graph")
@@ -375,6 +375,7 @@ fn main() -> ggez::GameResult {
         logger::Config::default()
             .output(logger::Output::Stdout)
             .level(log::LevelFilter::Trace)
+            .colored(true)
             .filters(&[
                 ("wgpu_core", log::LevelFilter::Warn),
                 ("wgpu_hal", log::LevelFilter::Error),
@@ -388,7 +389,6 @@ fn main() -> ggez::GameResult {
     let config: config::Config = config::load();
 
     let cb = ggez::ContextBuilder::new("Doodlai display window", "Bowarc")
-        .resources_dir_name("resources\\external\\")
         .window_setup(
             ggez::conf::WindowSetup::default()
                 .title("Display game")
@@ -396,8 +396,8 @@ fn main() -> ggez::GameResult {
                 .vsync(config.window.v_sync)
                 .srgb(config.window.srgb),
         )
-        .window_mode(config.window.into())
-        .backend(ggez::conf::Backend::Vulkan);
+        .window_mode(config.window.into());
+        // .backend(ggez::conf::Backend::Vulkan);
 
     let (mut ctx, event_loop) = cb.build()?;
 
