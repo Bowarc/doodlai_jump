@@ -2,7 +2,7 @@
 
 
 ### Current state
-Ugly test being cleaned up
+Ugly test project being cleaned up
 
 Display has some issues, namely:  
 - Agent is not moving the character
