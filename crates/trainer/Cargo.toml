@@ -1,27 +1,18 @@
 [package]
-name = "ring"
+name = "trainer"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[lib]
-name = "ring"
-path = "src/lib.rs"
-crate-type = ["rlib"]
-
-[[bin]]
-name = "ring"
-path = "src/main.rs"
-
 [dependencies]
-game = {path = "../game"}
+doodl-jump.workspace = true
 ctrlc = "3.5.2"
 log.workspace = true
 logger.workspace = true
 time.workspace = true
 rand = "0.8.5"
-maths.workspace =true
+math.workspace =true
 serde_json.workspace = true
 rayon = "1.11.0"
 neat.workspace = true

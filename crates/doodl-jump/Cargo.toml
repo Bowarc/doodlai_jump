@@ -1,0 +1,13 @@
+[package]
+name = "doodl-jump"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+time.workspace = true
+logger.workspace = true
+random.workspace = true
+math.workspace = true
+
+
+

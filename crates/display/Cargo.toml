@@ -12,8 +12,8 @@ path = "src/main.rs"
 [dependencies]
 ggez = "0.9.3"
 
-game = { path = "../game" }
-ring = { path = "../ring" }
+doodl-jump.workspace = true
+trainer = { path = "../trainer" }
 
 ggegui = { git = "https://github.com/Bowarc/ggegui" }
 threading = { git = "https://github.com/Bowarc/Crates.git", package = "threading" }
