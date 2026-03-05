@@ -5,11 +5,11 @@ pub enum PlatformType {}
 
 #[derive(Clone)]
 pub struct Platform {
-    pub rect: maths::Rect,
+    pub rect: math::Rect,
 }
 
 impl Platform {
-    pub fn new(rect: impl Into<maths::Rect>) -> Self {
+    pub fn new(rect: impl Into<math::Rect>) -> Self {
         Self { rect: rect.into() }
     }
 }

@@ -25,11 +25,11 @@ impl Game {
         let mut platforms = Vec::new();
 
         for i in 1..=PLATFORM_LIMIT {
-            let size = maths::Vec2::new(
+            let size = math::Vec2::new(
                 platform::PLATFORM_BASE_WIDTH,
                 platform::PLATFORM_BASE_HEIGHT,
             );
-            let pos = maths::Point::new(
+            let pos = math::Point::new(
                 random::get_inc(
                     platform::PLATFORM_BASE_WIDTH,
                     GAME_WIDTH - platform::PLATFORM_BASE_WIDTH,
@@ -37,7 +37,7 @@ impl Game {
                 ((GAME_HEIGHT as u32 / PLATFORM_LIMIT) * i) as f64,
             );
 
-            platforms.push(Platform::new(maths::Rect::new_from_center(pos, size, 0.)));
+            platforms.push(Platform::new(math::Rect::new_from_center(pos, size, 0.)));
         }
 
         Self {
@@ -63,26 +63,26 @@ impl Game {
         }
 
         self.platforms.retain(|platform| {
-            // maths::get_distance(platform.rect.center(), self.player.rect.center()) < 1000.
+            // math::get_distance(platform.rect.center(), self.player.rect.center()) < 1000.
             platform.rect.center().y - (self.scroll as f64) < GAME_HEIGHT
         });
 
         // create platforms (remove platfoms first to not iter over newly created platforms)
 
         while (self.platforms.len() as u32) < PLATFORM_LIMIT {
-            let pos = maths::Point::new(
+            let pos = math::Point::new(
                 random::get_inc(
                     platform::PLATFORM_BASE_WIDTH / 2.,
                     GAME_WIDTH - platform::PLATFORM_BASE_WIDTH / 2.,
                 ),
                 self.scroll as f64,
             );
-            let size = maths::Vec2::new(
+            let size = math::Vec2::new(
                 platform::PLATFORM_BASE_WIDTH,
                 platform::PLATFORM_BASE_HEIGHT,
             );
 
-            let rect = maths::Rect::new_from_center(pos, size, 0.);
+            let rect = math::Rect::new_from_center(pos, size, 0.);
 
             self.platforms.push(Platform::new(rect));
         }

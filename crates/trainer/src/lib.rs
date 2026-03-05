@@ -2,8 +2,8 @@ pub const NB_GAMES: usize = 3;
 pub const GAME_TIME_S: usize = 20; // Nb of secconds we let the ai play the game before registering their scrore
 pub const GAME_FPS: usize = 20; // 60
 pub const GAME_DELTA_TIME: f64 = 1. / GAME_FPS as f64;
-pub const NB_GENERATIONS: usize = 200;
-pub const NB_GENOME_PER_GEN: usize = 2_500;
+pub const NB_GENERATIONS: usize = 100;
+pub const NB_GENOME_PER_GEN: usize = 200;
 pub const MUTATION_RATE: f32 = 0.05;
 pub const MUTATION_PASSES: usize = 3;
 
@@ -13,28 +13,28 @@ const OBJECT_DATA_LEN: usize = 2;
 pub const AGENT_IN: usize = 1 + 1 + 1 + NB_PLATFORM_IN * OBJECT_DATA_LEN;
 pub const AGENT_OUT: usize = 3; // None, Left, right
 
-pub fn generate_inputs(game: &game::Game) -> [f32; AGENT_IN] {
+pub fn generate_inputs(game: &doodl_jump::Game) -> [f32; AGENT_IN] {
     let mut inputs = Vec::new();
 
-    let build_single_input = |obj_rect: &maths::Rect, player: &maths::Rect| -> [f32; 2] {
+    let build_single_input = |obj_rect: &math::Rect, player: &math::Rect| -> [f32; 2] {
         let a = (
             obj_rect.center().x,
-            maths::get_distance(obj_rect.center(), player.center()) as i32,
+            math::get_distance(&obj_rect.center(), &player.center()) as i32,
         );
 
         let b = (
             obj_rect.center().x,
-            maths::get_distance(
-                obj_rect.center(),
-                maths::Point::new(player.center().x + game::GAME_WIDTH, player.center().y),
+            math::get_distance(
+                &obj_rect.center(),
+                &math::Point::new(player.center().x + doodl_jump::GAME_WIDTH, player.center().y),
             ) as i32,
         );
 
         let c = (
             obj_rect.center().x,
-            maths::get_distance(
-                obj_rect.center(),
-                maths::Point::new(player.center().x - game::GAME_WIDTH, player.center().y),
+            math::get_distance(
+                &obj_rect.center(),
+                &math::Point::new(player.center().x - doodl_jump::GAME_WIDTH, player.center().y),
             ) as i32,
         );
 
@@ -48,8 +48,8 @@ pub fn generate_inputs(game: &game::Game) -> [f32; AGENT_IN] {
         [
             // game.player.rect.center().x as f32,
             // game.player.velocity.y as f32,
-            game.player.rect.center().x / game::GAME_WIDTH,
-            (game.player.rect.center().y - game.scroll as f64) / game::GAME_HEIGHT,
+            game.player.rect.center().x / doodl_jump::GAME_WIDTH,
+            (game.player.rect.center().y - game.scroll as f64) / doodl_jump::GAME_HEIGHT,
             game.player.velocity.y,
         ]
         .iter()
@@ -63,8 +63,8 @@ pub fn generate_inputs(game: &game::Game) -> [f32; AGENT_IN] {
             .iter()
             .map(|platform| {
                 [
-                    platform.rect.center().x / game::GAME_WIDTH,
-                    (platform.rect.center().y - game.scroll as f64) / game::GAME_HEIGHT,
+                    platform.rect.center().x / doodl_jump::GAME_WIDTH,
+                    (platform.rect.center().y - game.scroll as f64) / doodl_jump::GAME_HEIGHT,
                 ]
             })
             // .map(rect_to_vec)
@@ -88,26 +88,3 @@ pub fn generate_inputs(game: &game::Game) -> [f32; AGENT_IN] {
 }
 
 pub type Brain = neat::NeuralNetwork<AGENT_IN, AGENT_OUT>;
-
-pub struct PerformanceStats {
-    pub high: f32,
-    pub median: f32,
-    pub low: f32,
-}
-
-#[derive(Default, Clone)]
-pub struct PlottingObserver {
-    pub performance_stats: std::sync::Arc<std::sync::Mutex<Vec<PerformanceStats>>>,
-}
-
-impl neat::FitnessObserver<Brain> for PlottingObserver {
-    fn observe(&self, fitnesses: &[(Brain, f32)]) {
-        // these are sorted
-        let mut stats = self.performance_stats.lock().unwrap();
-        stats.push(PerformanceStats {
-            high: fitnesses.first().unwrap().1,
-            median: fitnesses[fitnesses.len() / 2].1,
-            low: fitnesses.last().unwrap().1,
-        });
-    }
-}

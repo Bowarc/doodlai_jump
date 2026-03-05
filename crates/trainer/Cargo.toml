@@ -11,7 +11,7 @@ ctrlc = "3.5.2"
 log.workspace = true
 logger.workspace = true
 time.workspace = true
-rand = "0.8.5"
+rand = "0.10.0"
 math.workspace =true
 serde_json.workspace = true
 rayon = "1.11.0"
@@ -19,3 +19,5 @@ neat.workspace = true
 indicatif = "0.17.11"
 plotters = "0.3.7"
 genetic-rs.workspace = true
+ron.workspace = true
+genetic-rs-extras = { version = "0.1.1", features = ["indicatif", "plotters"] }
