@@ -29,7 +29,7 @@ enum_dispatch = "0.3.13"
 derivative = "2.2.0"
 
 serde = { version = "1.0.228", features = ["derive"] }
-ron = "0.8.1"
+bincode-next.workspace = true
 
 spin_sleep = "1.3.3"
 log.workspace = true

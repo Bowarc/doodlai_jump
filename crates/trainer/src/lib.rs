@@ -2,8 +2,8 @@ pub const NB_GAMES: usize = 3;
 pub const GAME_TIME_S: usize = 20; // Nb of secconds we let the ai play the game before registering their scrore
 pub const GAME_FPS: usize = 20; // 60
 pub const GAME_DELTA_TIME: f64 = 1. / GAME_FPS as f64;
-pub const NB_GENERATIONS: usize = 100;
-pub const NB_GENOME_PER_GEN: usize = 200;
+pub const NB_GENERATIONS: usize = 200;
+pub const NB_GENOME_PER_GEN: usize = 250;
 pub const MUTATION_RATE: f32 = 0.05;
 pub const MUTATION_PASSES: usize = 3;
 

@@ -3,7 +3,6 @@ use neat::*;
 use plotters::{
     drawing::IntoDrawingArea as _, prelude::SVGBackend, style::{Color as _, IntoFont as _}
 };
-use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use trainer::{
     Brain, GAME_DELTA_TIME, GAME_FPS, GAME_TIME_S,
     MUTATION_PASSES, MUTATION_RATE, NB_GAMES, NB_GENERATIONS, NB_GENOME_PER_GEN,
@@ -28,8 +27,10 @@ struct BestAgentSaver {
 impl FitnessObserver<Brain> for BestAgentSaver {
     fn observe(&mut self, fitnesses: &[(Brain, f32)]) {
         let best = &fitnesses[0].0;
-        let serialized = ron::ser::to_string_pretty(best, ron::ser::PrettyConfig::default()).unwrap();
-        std::fs::write(&self.path, serialized).expect("failed to write best agent to file");
+        let mut file = std::fs::File::create(&self.path).expect("Failed to create best agent file");
+        let bytes = bincode_next::serde::encode_to_vec(&best, bincode_next::config::standard())
+            .expect("Failed to serialize agent");
+        file.write_all(&bytes).expect("Failed to write best agent to file");
     }
 }
 
@@ -86,7 +87,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let output = PathBuf::from(OUTPUT_DIR);
 
-    let observer = BestAgentSaver { path: output.join("best.ron") }
+    let observer = BestAgentSaver { path: output.join("best.nn") }
         .layer(ProgressObserver::new_with_default_style(NB_GENERATIONS as u64))
         .layer(FitnessPlotter::new());
 
@@ -107,16 +108,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         ),
     );
 
-    sim.perform_generations(NB_GENERATIONS);
+    for _ in 0..NB_GENERATIONS {
+        if !running.load(std::sync::atomic::Ordering::SeqCst) {
+            break;
+        }
+        sim.next_generation();
+    }
 
-    sim.eliminator.observer.0.1.finish();
+    if running.load(std::sync::atomic::Ordering::SeqCst) {
+        sim.eliminator.observer.0.1.finish();
+        debug!("Finished all generations");
+    } else {
+        sim.eliminator.observer.0.1.finish_and_clear();
+        debug!("Received stop signal, stopping training...");
+    }
 
     debug!(
         "Stopping loop. The training server ran {}\nSaving data . . .\n",
         time::format(&stopwatch.read(), 3)
     );
 
-    // TODO still build this with ctrlc
     let plot_path = output.join("fitness.svg");
     let root = SVGBackend::new(&plot_path, (640, 480))
         .into_drawing_area();
