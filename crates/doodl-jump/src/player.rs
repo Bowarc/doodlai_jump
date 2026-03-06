@@ -1,4 +1,5 @@
 use crate::platform::Platform;
+use std::collections::VecDeque;
 
 const GRAVITY: f64 = 400.;
 const JUMP_HEIGHT: f64 = 575.;
@@ -35,7 +36,7 @@ impl Player {
         }
     }
 
-    pub fn update(&mut self, platforms: &[Platform], dt: f64) {
+    pub fn update(&mut self, platforms: &VecDeque<Platform>, dt: f64) {
         self.rect
             .set_center(self.rect.center() + self.velocity * dt);
 
@@ -48,17 +49,13 @@ impl Player {
 
         self.current_direction = None;
 
-        if self.rect.center().x > crate::GAME_WIDTH {
-            self.rect
-                .set_center(math::Vec2::new(0., self.rect.center().y))
-        } else if self.rect.center().x < 0. {
-            self.rect
-                .set_center(math::Vec2::new(crate::GAME_WIDTH, self.rect.center().y))
-        }
+        let wrapped_x = self.rect.center().x.rem_euclid(crate::GAME_WIDTH);
+        self.rect
+            .set_center(math::Vec2::new(wrapped_x, self.rect.center().y));
     }
 
     // Returns if the player collided this frame
-    fn update_collision(&mut self, platforms: &[Platform]) -> bool {
+    fn update_collision(&mut self, platforms: &VecDeque<Platform>) -> bool {
         let mut collided_this_frame = false;
         for platform in platforms.iter() {
             if !math::collision::rect_rect_no_r(&self.rect, &platform.rect) {

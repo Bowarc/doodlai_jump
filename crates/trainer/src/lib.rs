@@ -9,86 +9,49 @@ pub const MUTATION_PASSES: usize = 3;
 
 const NB_PLATFORM_IN: usize = 3;
 const OBJECT_DATA_LEN: usize = 2;
-// Player x + player y velocity + data for each platform we want to send
-pub const AGENT_IN: usize = 1 + 1 + 1 + NB_PLATFORM_IN * OBJECT_DATA_LEN;
+// Player y velocity + processed dt scale + data for each platform we want to send
+pub const AGENT_IN: usize = 1 + 1 + NB_PLATFORM_IN * OBJECT_DATA_LEN;
 pub const AGENT_OUT: usize = 3; // None, Left, right
 
-pub fn generate_inputs(game: &doodl_jump::Game) -> [f32; AGENT_IN] {
-    let mut inputs = Vec::new();
+fn wrapped_dx(player_x: f64, target_x: f64, width: f64) -> f64 {
+    (target_x - player_x + width / 2.).rem_euclid(width) - width / 2.
+}
 
-    let build_single_input = |obj_rect: &math::Rect, player: &math::Rect| -> [f32; 2] {
-        let a = (
-            obj_rect.center().x,
-            math::get_distance(&obj_rect.center(), &player.center()) as i32,
-        );
-
-        let b = (
-            obj_rect.center().x,
-            math::get_distance(
-                &obj_rect.center(),
-                &math::Point::new(
-                    player.center().x + doodl_jump::GAME_WIDTH,
-                    player.center().y,
-                ),
-            ) as i32,
-        );
-
-        let c = (
-            obj_rect.center().x,
-            math::get_distance(
-                &obj_rect.center(),
-                &math::Point::new(
-                    player.center().x - doodl_jump::GAME_WIDTH,
-                    player.center().y,
-                ),
-            ) as i32,
-        );
-
-        let min = [a, b, c].iter().cloned().min_by_key(|(_x, d)| *d).unwrap();
-
-        [min.0 as f32, min.1 as f32]
+pub fn generate_inputs(game: &doodl_jump::Game, processed_dt: f64, reference_dt: f64) -> [f32; AGENT_IN] {
+    let mut inputs = Vec::with_capacity(AGENT_IN);
+    let player_center = game.player.rect.center();
+    let dt_scale = if reference_dt > 0.0 {
+        processed_dt / reference_dt
+    } else {
+        1.0
     };
 
-    // inputs.extend(rect_to_vec(&game.player.rect));
-    inputs.extend(
-        [
-            // game.player.rect.center().x as f32,
-            // game.player.velocity.y as f32,
-            game.player.rect.center().x / doodl_jump::GAME_WIDTH,
-            (game.player.rect.center().y - game.scroll as f64) / doodl_jump::GAME_HEIGHT,
-            game.player.velocity.y,
-        ]
+    inputs.push((game.player.velocity.y / 1000.) as f32);
+    inputs.push(dt_scale as f32);
+
+    let mut platform_data = game
+        .platforms
         .iter()
-        .map(|v| *v as f32),
-    );
+        .map(|platform| {
+            let platform_center = platform.rect.center();
+            let dx = wrapped_dx(player_center.x, platform_center.x, doodl_jump::GAME_WIDTH);
+            let dy = platform_center.y - player_center.y;
+            let distance_sq = dx * dx + dy * dy;
 
-    // ordered by distance to player
-    inputs.extend({
-        let mut platform_data = game
-            .platforms
-            .iter()
-            .map(|platform| {
-                [
-                    platform.rect.center().x / doodl_jump::GAME_WIDTH,
-                    (platform.rect.center().y - game.scroll as f64) / doodl_jump::GAME_HEIGHT,
-                ]
-            })
-            // .map(rect_to_vec)
-            .collect::<Vec<_>>();
+            (distance_sq, dx, dy)
+        })
+        .collect::<Vec<_>>();
 
-        // platform_data.sort_unstable_by_key(|xd| {
-        //     // By default is low to high
-        //     xd[1] as i32
-        // });
-        let _end = platform_data.split_off(NB_PLATFORM_IN);
+    platform_data.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap_or(std::cmp::Ordering::Equal));
 
-        platform_data
-            .iter()
-            .cloned()
-            .flatten()
-            .map(|v| v as f32)
-            .collect::<Vec<f32>>()
-    });
+    for (_, dx, dy) in platform_data.into_iter().take(NB_PLATFORM_IN) {
+        inputs.push((dx / (doodl_jump::GAME_WIDTH * 0.5)) as f32);
+        inputs.push((dy / doodl_jump::GAME_HEIGHT) as f32);
+    }
+
+    while inputs.len() < AGENT_IN {
+        inputs.push(0.0);
+    }
 
     inputs.try_into().unwrap()
 }

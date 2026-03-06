@@ -1,4 +1,5 @@
 use clap::Parser;
+use rand::RngExt as _;
 use std::path::PathBuf;
 
 #[derive(Debug, Clone, Parser)]
@@ -11,6 +12,14 @@ pub struct TrainerCli {
     /// Simulation FPS used by the game update loop.
     #[arg(long, default_value_t = 20)]
     pub game_fps: usize,
+
+    /// Use variable frame time instead of fixed dt (dt is randomly jittered around 1 / game_fps).
+    #[arg(long, default_value_t = false)]
+    pub variable_dt: bool,
+
+    /// Max relative jitter used with --variable-dt. 0.25 means dt in [0.75x, 1.25x].
+    #[arg(long, default_value_t = 0.25)]
+    pub variable_dt_jitter: f64,
 
     /// Number of generations to train.
     #[arg(long, default_value_t = 1000)]
@@ -42,6 +51,18 @@ impl TrainerCli {
         1.0 / self.game_fps as f64
     }
 
+    pub fn frame_delta_time(&self, rng: &mut impl rand::Rng) -> f64 {
+        let base_dt = self.game_delta_time();
+        if !self.variable_dt {
+            return base_dt;
+        }
+
+        let min_scale = 1.0 - self.variable_dt_jitter;
+        let max_scale = 1.0 + self.variable_dt_jitter;
+
+        base_dt * rng.random_range(min_scale..=max_scale)
+    }
+
     pub fn validate(&self) -> Result<(), String> {
         if self.nb_games == 0 {
             return Err("--nb-games must be greater than 0".to_string());
@@ -49,6 +70,10 @@ impl TrainerCli {
 
         if self.game_fps == 0 {
             return Err("--game-fps must be greater than 0".to_string());
+        }
+
+        if !(0.0..1.0).contains(&self.variable_dt_jitter) {
+            return Err("--variable-dt-jitter must be in [0.0, 1.0)".to_string());
         }
 
         if self.nb_generations == 0 {

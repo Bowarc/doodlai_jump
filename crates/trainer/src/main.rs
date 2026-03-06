@@ -43,12 +43,18 @@ impl FitnessObserver<Brain> for BestAgentSaver {
 
 fn play_game(brain: &Brain, cfg: &TrainerCli) -> f32 {
     let mut game = doodl_jump::Game::new();
+    let mut rng = rand::rng();
 
     let mut saved_score = game.score();
     let mut save_timer = time::DTDelay::new(cfg.stagnation_timeout_s);
 
     while game.score() < 100_000. {
-        let output = brain.predict(trainer::generate_inputs(&game));
+        let frame_dt = cfg.frame_delta_time(&mut rng);
+        let output = brain.predict(trainer::generate_inputs(
+            &game,
+            frame_dt,
+            cfg.game_delta_time(),
+        ));
 
         match output.iter().max_index().unwrap() {
             0 => (), // No action
@@ -57,8 +63,8 @@ fn play_game(brain: &Brain, cfg: &TrainerCli) -> f32 {
             _ => (),
         }
 
-        game.update(cfg.game_delta_time());
-        save_timer.update(cfg.game_delta_time());
+        game.update(frame_dt);
+        save_timer.update(frame_dt);
 
         if game.lost {
             // println!("Lost: {}", game.score());
