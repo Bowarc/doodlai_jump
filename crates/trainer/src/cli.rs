@@ -22,7 +22,7 @@ pub struct TrainerCli {
     pub variable_dt_jitter: f64,
 
     /// Number of generations to train.
-    #[arg(long, default_value_t = 1000)]
+    #[arg(long, default_value_t = 150)]
     pub nb_generations: usize,
 
     /// Number of genomes per generation.
