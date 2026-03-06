@@ -44,6 +44,7 @@ impl FitnessObserver<Brain> for BestAgentSaver {
 fn play_game(brain: &Brain, cfg: &TrainerCli) -> f32 {
     let mut game = doodl_jump::Game::new();
     let mut rng = rand::rng();
+    let mut elapsed_s = 0.0;
 
     let mut saved_score = game.score();
     let mut save_timer = time::DTDelay::new(cfg.stagnation_timeout_s);
@@ -64,6 +65,7 @@ fn play_game(brain: &Brain, cfg: &TrainerCli) -> f32 {
         }
 
         game.update(frame_dt);
+        elapsed_s += frame_dt;
         save_timer.update(frame_dt);
 
         if game.lost {
@@ -82,7 +84,10 @@ fn play_game(brain: &Brain, cfg: &TrainerCli) -> f32 {
         }
     }
 
-    game.score()
+    let penalty_time_s = (elapsed_s - cfg.fitness_time_grace_s).max(0.0) as f32;
+    let time_penalty = penalty_time_s * cfg.fitness_time_penalty_per_s;
+
+    game.score() - time_penalty
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {

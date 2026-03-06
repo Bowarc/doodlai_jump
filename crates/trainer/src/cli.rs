@@ -41,6 +41,14 @@ pub struct TrainerCli {
     #[arg(long, default_value_t = 10.0)]
     pub stagnation_timeout_s: f64,
 
+    /// Grace period (seconds) before time penalty starts affecting fitness.
+    #[arg(long, default_value_t = 3.0)]
+    pub fitness_time_grace_s: f64,
+
+    /// Fitness penalty applied per second after the grace period.
+    #[arg(long, default_value_t = 0.5)]
+    pub fitness_time_penalty_per_s: f32,
+
     /// Directory where training outputs are saved.
     #[arg(long, default_value = "./sim")]
     pub output_dir: PathBuf,
@@ -90,6 +98,14 @@ impl TrainerCli {
 
         if self.stagnation_timeout_s <= 0.0 {
             return Err("--stagnation-timeout-s must be greater than 0".to_string());
+        }
+
+        if self.fitness_time_grace_s < 0.0 {
+            return Err("--fitness-time-grace-s must be >= 0".to_string());
+        }
+
+        if self.fitness_time_penalty_per_s < 0.0 {
+            return Err("--fitness-time-penalty-per-s must be >= 0".to_string());
         }
 
         Ok(())
