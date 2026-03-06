@@ -2,7 +2,7 @@ use clap::Parser;
 use std::path::PathBuf;
 
 #[derive(Debug, Clone, Parser)]
-#[command(author = "Boward, HyerCodec", about = "Train a Doodl Jump agent")]
+#[command(author, version, about = "Train a Doodl Jump agent")]
 pub struct TrainerCli {
     /// Number of game attempts used to average a genome's fitness.
     #[arg(long, default_value_t = 3)]
