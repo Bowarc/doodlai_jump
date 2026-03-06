@@ -1,27 +1,33 @@
+use clap::Parser;
 use genetic_rs_extras::{pb::ProgressObserver, plot::FitnessPlotter};
 use neat::*;
-use plotters::{
-    drawing::IntoDrawingArea as _, prelude::SVGBackend, style::{Color as _, IntoFont as _}
-};
-use trainer::{
-    Brain, GAME_DELTA_TIME, GAME_FPS, GAME_TIME_S,
-    MUTATION_PASSES, MUTATION_RATE, NB_GAMES, NB_GENERATIONS, NB_GENOME_PER_GEN,
-};
-use std::{io::Write as _, path::PathBuf};
+use plotters::{drawing::IntoDrawingArea as _, prelude::SVGBackend};
+use std::io::Write as _;
+use trainer::Brain;
 
 #[macro_use]
 extern crate log;
 
+mod cli;
 mod utils;
 
-const OUTPUT_DIR: &str = "./sim";
+use crate::cli::TrainerCli;
 
-fn fitness(brain: &Brain) -> f32 {
-    (0..NB_GAMES).map(|_| play_game(&brain)).sum::<f32>() / NB_GAMES as f32
+struct TrainerFitnessFn<'a> {
+    cfg: &'a TrainerCli,
+}
+
+impl<'a> FitnessFn<Brain> for TrainerFitnessFn<'a> {
+    fn fitness(&self, brain: &Brain) -> f32 {
+        (0..self.cfg.nb_games)
+            .map(|_| play_game(brain, self.cfg))
+            .sum::<f32>()
+            / self.cfg.nb_games as f32
+    }
 }
 
 struct BestAgentSaver {
-    path: PathBuf,
+    path: std::path::PathBuf,
 }
 
 impl FitnessObserver<Brain> for BestAgentSaver {
@@ -30,18 +36,17 @@ impl FitnessObserver<Brain> for BestAgentSaver {
         let mut file = std::fs::File::create(&self.path).expect("Failed to create best agent file");
         let bytes = bincode_next::serde::encode_to_vec(&best, bincode_next::config::standard())
             .expect("Failed to serialize agent");
-        file.write_all(&bytes).expect("Failed to write best agent to file");
+        file.write_all(&bytes)
+            .expect("Failed to write best agent to file");
     }
 }
 
-fn play_game(brain: &Brain) -> f32 {
+fn play_game(brain: &Brain, cfg: &TrainerCli) -> f32 {
     let mut game = doodl_jump::Game::new();
 
     let mut saved_score = game.score();
-    let mut save_timer = time::DTDelay::new(10.);
+    let mut save_timer = time::DTDelay::new(cfg.stagnation_timeout_s);
 
-    // loop for the number of frames we want to play, should be enough frames to play 100s at 60fps
-    // for _ in 0..(GAME_FPS * GAME_TIME_S) {
     while game.score() < 100_000. {
         let output = brain.predict(trainer::generate_inputs(&game));
 
@@ -52,8 +57,8 @@ fn play_game(brain: &Brain) -> f32 {
             _ => (),
         }
 
-        game.update(GAME_DELTA_TIME);
-        save_timer.update(GAME_DELTA_TIME);
+        game.update(cfg.game_delta_time());
+        save_timer.update(cfg.game_delta_time());
 
         if game.lost {
             // println!("Lost: {}", game.score());
@@ -79,36 +84,45 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // logger::init(config);
 
+    let cfg = TrainerCli::parse();
+    cfg.validate().map_err(std::io::Error::other)?;
+
     let stopwatch = time::Stopwatch::start_new();
 
     let running = utils::set_up_ctrlc();
 
     debug!("Starting training server");
 
-    let output = PathBuf::from(OUTPUT_DIR);
+    std::fs::create_dir_all(&cfg.output_dir)?;
+    let output = cfg.output_dir.clone();
 
-    let observer = BestAgentSaver { path: output.join("best.nn") }
-        .layer(ProgressObserver::new_with_default_style(NB_GENERATIONS as u64))
-        .layer(FitnessPlotter::new());
+    let observer = BestAgentSaver {
+        path: output.join("best.nn"),
+    }
+    .layer(ProgressObserver::new_with_default_style(
+        cfg.nb_generations as u64,
+    ))
+    .layer(FitnessPlotter::new());
 
     let mut rng = rand::rng();
+    let fitness_fn = TrainerFitnessFn { cfg: &cfg };
 
     let mut sim = GeneticSim::new(
-        Vec::gen_random(&mut rng, NB_GENOME_PER_GEN),
+        Vec::gen_random(&mut rng, cfg.nb_genome_per_gen),
         FitnessEliminator::builder()
-            .fitness_fn(fitness)
+            .fitness_fn(fitness_fn)
             .observer(observer)
             .build_or_panic(),
         CrossoverRepopulator::new(
-            MUTATION_RATE,
+            cfg.mutation_rate,
             ReproductionSettings {
-                mutation_passes: MUTATION_PASSES,
+                mutation_passes: cfg.mutation_passes,
                 ..Default::default()
             },
         ),
     );
 
-    for _ in 0..NB_GENERATIONS {
+    for _ in 0..cfg.nb_generations {
         if !running.load(std::sync::atomic::Ordering::SeqCst) {
             break;
         }
@@ -116,10 +130,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     if running.load(std::sync::atomic::Ordering::SeqCst) {
-        sim.eliminator.observer.0.1.finish();
+        sim.eliminator.observer.0 .1.finish();
         debug!("Finished all generations");
     } else {
-        sim.eliminator.observer.0.1.finish_and_clear();
+        sim.eliminator.observer.0 .1.finish_and_clear();
         debug!("Received stop signal, stopping training...");
     }
 
@@ -129,8 +143,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     let plot_path = output.join("fitness.svg");
-    let root = SVGBackend::new(&plot_path, (640, 480))
-        .into_drawing_area();
+    let root = SVGBackend::new(&plot_path, (640, 480)).into_drawing_area();
 
     sim.eliminator.observer.1.plot(&root)?;
 

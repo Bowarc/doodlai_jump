@@ -26,7 +26,10 @@ pub fn generate_inputs(game: &doodl_jump::Game) -> [f32; AGENT_IN] {
             obj_rect.center().x,
             math::get_distance(
                 &obj_rect.center(),
-                &math::Point::new(player.center().x + doodl_jump::GAME_WIDTH, player.center().y),
+                &math::Point::new(
+                    player.center().x + doodl_jump::GAME_WIDTH,
+                    player.center().y,
+                ),
             ) as i32,
         );
 
@@ -34,7 +37,10 @@ pub fn generate_inputs(game: &doodl_jump::Game) -> [f32; AGENT_IN] {
             obj_rect.center().x,
             math::get_distance(
                 &obj_rect.center(),
-                &math::Point::new(player.center().x - doodl_jump::GAME_WIDTH, player.center().y),
+                &math::Point::new(
+                    player.center().x - doodl_jump::GAME_WIDTH,
+                    player.center().y,
+                ),
             ) as i32,
         );
 
