@@ -38,7 +38,7 @@ time.workspace = true
 random.workspace = true
 
 neat.workspace = true
-serde_json.workspace = true
 
 strum = "0.28.0"
 strum_macros = "0.28.0"
+ron = "0.12.0"

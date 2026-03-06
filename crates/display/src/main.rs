@@ -1,3 +1,5 @@
+use trainer::Brain;
+
 #[macro_use]
 extern crate log;
 
@@ -104,10 +106,7 @@ impl Display {
                 gui_menu,
                 global_ui,
                 game: game::Game::new(),
-                nn: serde_json::from_str::<
-                    neat::NeuralNetwork<{ ring::AGENT_IN }, { ring::AGENT_OUT }>,
-                >(include_str!("./nnt.json"))
-                .unwrap(),
+                nn: bincode_next::decode_from_slice::<Brain, _>(include_bytes!("./agent.nn"), bincode_next::config::standard()).unwrap().0,
                 threadpool,
             },
         )
