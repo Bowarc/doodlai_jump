@@ -2,6 +2,7 @@ use clap::Parser;
 use genetic_rs_extras::{pb::ProgressObserver, plot::FitnessPlotter};
 use neat::*;
 use plotters::{drawing::IntoDrawingArea as _, prelude::SVGBackend};
+use rand::{rngs::StdRng, Rng, SeedableRng};
 use std::io::Write as _;
 use trainer::Brain;
 
@@ -15,14 +16,19 @@ use crate::cli::TrainerCli;
 
 struct TrainerFitnessFn<'a> {
     cfg: &'a TrainerCli,
+    seed: u64,
 }
 
 impl<'a> FitnessFn<Brain> for TrainerFitnessFn<'a> {
     fn fitness(&self, brain: &Brain) -> f32 {
-        (0..self.cfg.nb_games)
-            .map(|_| play_game(brain, self.cfg))
-            .sum::<f32>()
-            / self.cfg.nb_games as f32
+        let mut rng = StdRng::seed_from_u64(self.seed);
+        let mut total_score = 0.0;
+
+        for _ in 0..self.cfg.nb_games {
+            total_score += play_game(brain, self.cfg, &mut rng);
+        }
+
+        total_score / self.cfg.nb_games as f32
     }
 }
 
@@ -41,16 +47,15 @@ impl FitnessObserver<Brain> for BestAgentSaver {
     }
 }
 
-fn play_game(brain: &Brain, cfg: &TrainerCli) -> f32 {
+fn play_game(brain: &Brain, cfg: &TrainerCli, rng: &mut impl Rng) -> f32 {
     let mut game = doodl_jump::Game::new();
-    let mut rng = rand::rng();
     let mut elapsed_s = 0.0;
 
     let mut saved_score = game.score();
     let mut save_timer = time::DTDelay::new(cfg.stagnation_timeout_s);
 
     while game.score() < 100_000. {
-        let frame_dt = cfg.frame_delta_time(&mut rng);
+        let frame_dt = cfg.frame_delta_time(rng);
         let output = brain.predict(trainer::generate_inputs(
             &game,
             frame_dt,
@@ -116,7 +121,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     .layer(FitnessPlotter::new());
 
     let mut rng = rand::rng();
-    let fitness_fn = TrainerFitnessFn { cfg: &cfg };
+    let fitness_fn = TrainerFitnessFn {
+        cfg: &cfg,
+        seed: rng.random(),
+    };
 
     let mut sim = GeneticSim::new(
         Vec::gen_random(&mut rng, cfg.nb_genome_per_gen),
@@ -138,6 +146,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             break;
         }
         sim.next_generation();
+        sim.eliminator.fitness_fn.seed = rng.random();
     }
 
     if running.load(std::sync::atomic::Ordering::SeqCst) {
