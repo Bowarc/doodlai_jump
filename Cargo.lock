@@ -420,7 +420,7 @@ version = "0.1.0"
 source = "git+https://github.com/bowarc/camera2d_ggez#055334e8cf6de2bd12ad9ff3e52e5dce9330aeb7"
 dependencies = [
  "ggez",
- "math",
+ "math 0.1.0 (git+https://github.com/Bowarc/Crates.git)",
 ]
 
 [[package]]
@@ -990,7 +990,7 @@ dependencies = [
  "ggez",
  "log",
  "logger",
- "math",
+ "math 0.1.0",
  "neat",
  "random",
  "ron",
@@ -1018,7 +1018,7 @@ name = "doodl-jump"
 version = "0.1.0"
 dependencies = [
  "logger",
- "math",
+ "math 0.1.0",
  "random",
  "time",
 ]
@@ -1383,7 +1383,7 @@ dependencies = [
  "crevice",
  "directories",
  "gilrs",
- "glam",
+ "glam 0.24.2",
  "glyph_brush",
  "image",
  "log",
@@ -1470,6 +1470,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b5418c17512bdf42730f9032c74e1ae39afc408745ebb2acf72fbc4691c17945"
 dependencies = [
  "mint",
+]
+
+[[package]]
+name = "glam"
+version = "0.30.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "19fc433e8437a212d1b6f1e68c7824af3aed907da60afa994e7f542d18d12aa9"
+dependencies = [
+ "serde_core",
 ]
 
 [[package]]
@@ -2048,6 +2057,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "62bb907fe88d54d8d9ce32a3cceab4218ed2f6b7d35617cafe9adf84e43919cb"
 dependencies = [
  "libc",
+]
+
+[[package]]
+name = "math"
+version = "0.1.0"
+dependencies = [
+ "ggez",
+ "glam 0.30.10",
+ "serde",
 ]
 
 [[package]]
@@ -3489,7 +3507,7 @@ dependencies = [
  "genetic-rs-extras",
  "log",
  "logger",
- "math",
+ "math 0.1.0",
  "neat",
  "plotters",
  "rand 0.10.0",

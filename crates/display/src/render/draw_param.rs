@@ -10,6 +10,10 @@ pub struct DrawParam {
 
 #[allow(dead_code)]
 impl DrawParam {
+    fn to_ggez_vec2(v: math::Vec2) -> ggez::glam::Vec2 {
+        ggez::glam::Vec2::new(v.x as f32, v.y as f32)
+    }
+
     pub fn new() -> Self {
         Self::default()
     }
@@ -54,9 +58,9 @@ impl DrawParam {
         if let Some(size) = self.size {
             let image_size = image_size.into();
             ggez::graphics::DrawParam::new()
-                .dest(self.pos)
-                .scale((size / image_size) * self.scale)
-                .offset(image_size / math::Point::new(2., 2.) + self.offset)
+                .dest(Self::to_ggez_vec2(self.pos))
+                .scale(Self::to_ggez_vec2((size / image_size) * self.scale))
+                .offset(Self::to_ggez_vec2(image_size / math::Point::new(2., 2.) + self.offset))
                 .rotation(self.rotation as f32)
                 .color(self.color)
         } else {
@@ -65,9 +69,9 @@ impl DrawParam {
     }
     pub fn to_ggez_unscaled(self) -> ggez::graphics::DrawParam {
         ggez::graphics::DrawParam::new()
-            .dest(self.pos)
-            .scale(self.scale)
-            .offset(self.offset)
+            .dest(Self::to_ggez_vec2(self.pos))
+            .scale(Self::to_ggez_vec2(self.scale))
+            .offset(Self::to_ggez_vec2(self.offset))
             .rotation(self.rotation as f32)
             .color(self.color)
     }

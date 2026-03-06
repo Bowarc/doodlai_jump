@@ -21,9 +21,7 @@ stp = { git = "https://github.com/bowarc/stp" }
 camera2d_ggez = { git = "https://github.com/bowarc/camera2d_ggez" }
 
 ## This is bad, I need different versions of ggez for different projects and I don't actually know how to do it
-math = { git = "https://github.com/Bowarc/Crates.git", package = "math", features = [
-  "ggez",
-] }
+math = { workspace = true, features = ["ggez"] }
 
 enum_dispatch = "0.3.13"
 derivative = "2.2.0"

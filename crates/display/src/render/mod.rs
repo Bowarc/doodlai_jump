@@ -82,7 +82,10 @@ impl Renderer {
 
                     let img = ia.image();
 
-                    ia.push(dp.to_ggez_scaled((img.width(), img.height())));
+                    ia.push(dp.to_ggez_scaled(math::Point::new(
+                        img.width() as f64,
+                        img.height() as f64,
+                    )));
                     log.on_texture();
                     if !used_textures.contains(texture) {
                         used_textures.push(*texture);
@@ -111,7 +114,10 @@ impl Renderer {
                     canvas.draw(
                         text,
                         if let Some(dimensions) = text.dimensions(ctx).map(|d| d.size()) {
-                            dp.to_ggez_scaled(dimensions)
+                            dp.to_ggez_scaled(math::Point::new(
+                                dimensions.x as f64,
+                                dimensions.y as f64,
+                            ))
                         } else {
                             dp.to_ggez_unscaled()
                         },

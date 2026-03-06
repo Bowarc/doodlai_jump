@@ -26,7 +26,9 @@ impl Position {
             Position::Value(pt) => math::Point::new(pt.x().compute(ctx), pt.y().compute(ctx)),
             Position::Anchor { anchor, offset } => {
                 let offset = math::Point::new(offset.x().compute(ctx), offset.y().compute(ctx));
-                let drawable_size: math::Point = ctx.gfx.drawable_size().into();
+                let drawable_size_raw = ctx.gfx.drawable_size();
+                let drawable_size =
+                    math::Point::new(drawable_size_raw.0 as f64, drawable_size_raw.1 as f64);
 
                 let anchor_position = anchor.compute(&drawable_size, &element_size);
 
