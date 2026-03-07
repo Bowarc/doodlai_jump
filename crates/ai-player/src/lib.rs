@@ -2,13 +2,6 @@
 //!
 //! Contains the `Brain` type alias, network I/O constants, input generation
 //! (perception) and action application (behavior).
-//!
-//! # Input generation
-//!
-//! `Game::platforms` is a `VecDeque` kept sorted top‑to‑bottom (smallest y at
-//! the front) by `recycle_platforms`. With only `NUM_PLATFORMS` (5) entries we
-//! can find the nearest platforms to the player with a simple linear scan
-//! instead of sorting by distance.
 
 use neat::MaxIndex;
 
@@ -22,7 +15,7 @@ const OBJECT_DATA_LEN: usize = 2;
 /// Layout:
 /// - player vertical velocity (scaled)
 /// - raw frame dt in seconds (scaled down to keep values small)
-/// - for each of the `NB_PLATFORM_IN` nearest platforms:
+/// - for each of the [`NB_PLATFORM_IN`] nearest platforms:
 ///   - dx (wrapped, normalised to roughly \[-1, 1\])
 ///   - dy (normalised by game height)
 pub const AGENT_IN: usize = 1 + 1 + NB_PLATFORM_IN * OBJECT_DATA_LEN;
@@ -38,28 +31,28 @@ fn wrapped_dx(player_x: f64, target_x: f64, width: f64) -> f64 {
     (target_x - player_x + width / 2.0).rem_euclid(width) - width / 2.0
 }
 
-/// Build the neural‑network input array from the current game state.
+/// Build the neural network input array from the current game state.
 ///
-/// * `game` – current game state.
-/// * `dt`   – raw frame delta‑time in seconds. This is passed straight to the
-///   network (scaled down by 10× to keep values in a reasonable range) so the
+/// * `game` - current game state.
+/// * `dt`   - raw frame delta-time in seconds. This is passed straight to the
+///   network (scaled down by 10x to keep values in a reasonable range) so the
 ///   agent can learn to compensate for varying frame durations regardless of
 ///   what framerate it was trained at.
 pub fn generate_inputs(game: &doodl_jump::Game, dt: f32) -> [f32; AGENT_IN] {
     let mut inputs = Vec::with_capacity(AGENT_IN);
     let player_center = game.player.rect.center();
 
-    // 1) Scaled vertical velocity
+    // 0: Scaled vertical velocity
     inputs.push((game.player.velocity.y / 1000.0) as f32);
 
-    // 2) Raw dt scaled down (e.g. 0.033s at 30fps → ~0.0033)
+    // 1: Raw dt scaled down (e.g. 0.033s at 30fps → ~0.0033)
     inputs.push(dt * 0.1);
 
-    // 3) Nearest platforms
+    // 2-7: Nearest platforms
     //
-    // Platforms are ordered front (top / smallest y) → back (bottom / largest y).
+    // Platforms are ordered front (top / smallest y) -> back (bottom / largest y).
     // Find the split: first index whose y > player y. Everything before it is
-    // above‑or‑level, everything from it onward is below.
+    // above-or-level, everything from it onward is below.
     let platforms = &game.platforms;
     let len = platforms.len();
 
@@ -68,7 +61,7 @@ pub fn generate_inputs(game: &doodl_jump::Game, dt: f32) -> [f32; AGENT_IN] {
         .position(|p| p.rect.center().y > player_center.y)
         .unwrap_or(len);
 
-    // Walk outward from the split collecting the nearest platforms.
+    // walk outward from the split collecting the nearest platforms.
     //   above_idx counts backwards from split (nearest above first)
     //   below_idx counts forwards  from split (nearest below first)
     let mut above_idx = split;
@@ -87,7 +80,7 @@ pub fn generate_inputs(game: &doodl_jump::Game, dt: f32) -> [f32; AGENT_IN] {
             None
         };
 
-        // Pick whichever is closer (prefer above on tie)
+        // pick whichever is closer (prefer above on tie)
         let pick_above = match (above_dy, below_dy) {
             (Some(a), Some(b)) => a <= b,
             (Some(_), None) => true,
@@ -113,7 +106,7 @@ pub fn generate_inputs(game: &doodl_jump::Game, dt: f32) -> [f32; AGENT_IN] {
         count += 1;
     }
 
-    // Pad with zeros when fewer platforms exist than NB_PLATFORM_IN
+    // pad with zeros when fewer platforms exist than NB_PLATFORM_IN
     while inputs.len() < AGENT_IN {
         inputs.push(0.0);
     }
