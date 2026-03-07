@@ -14,7 +14,7 @@ pub struct TrainerCli {
     pub game_fps: usize,
 
     /// Use variable frame time instead of fixed dt (dt is randomly jittered around 1 / game_fps).
-    #[arg(long, default_value_t = false)]
+    #[arg(long, default_value_t = true)]
     pub variable_dt: bool,
 
     /// Max relative jitter used with --variable-dt. 0.25 means dt in [0.75x, 1.25x].
