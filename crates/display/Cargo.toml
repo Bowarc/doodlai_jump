@@ -6,5 +6,6 @@ edition = "2024"
 [dependencies]
 doodl-jump.workspace = true
 ai-player.workspace = true
+bincode-next.workspace = true
 macroquad = "0.4.14"
 rfd = "0.17.2"
