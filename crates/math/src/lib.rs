@@ -127,12 +127,3 @@ pub mod collision {
         a_tl.x < b_br.x && a_br.x > b_tl.x && a_tl.y < b_br.y && a_br.y > b_tl.y
     }
 }
-
-#[cfg(feature = "ggez")]
-impl From<Rect> for ggez::graphics::Rect {
-    fn from(value: Rect) -> Self {
-        let top_left = value.aa_topleft();
-        let size = value.size();
-        Self::new(top_left.x as f32, top_left.y as f32, size.x as f32, size.y as f32)
-    }
-}

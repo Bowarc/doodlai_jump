@@ -5,9 +5,7 @@ edition = "2021"
 
 [features]
 default = []
-ggez = ["dep:ggez"]
 
 [dependencies]
 glam = { version = "0.30.5", features = ["serde"] }
 serde = { version = "1.0", features = ["derive"] }
-ggez = { version = "0.9.3", optional = true }
