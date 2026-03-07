@@ -87,9 +87,7 @@ fn play_game(brain: &Brain, cfg: &TrainerCli, rng: &mut impl Rng) -> f32 {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // let config = logger::LoggerConfig::default().set_level(log::LevelFilter::Debug);
-
-    // logger::init(config);
+    env_logger::init();
 
     let cfg = TrainerCli::parse();
     cfg.validate().map_err(std::io::Error::other)?;

@@ -18,3 +18,4 @@ genetic-rs.workspace = true
 bincode-next.workspace = true
 genetic-rs-extras = { version = "0.1.1", features = ["indicatif", "plotters"] }
 clap = { version = "4.5.60", features = ["derive"] }
+env_logger.workspace = true

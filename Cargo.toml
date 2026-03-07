@@ -24,3 +24,4 @@ genetic-rs = { version = "1.3.0", features = ["derive"] }
 doodl-jump = { path = "crates/doodl-jump" }
 ai-player = { path = "crates/ai-player" }
 bincode-next = { version = "2.1.0", features = ["serde"] }
+env_logger = "0.11.9"
