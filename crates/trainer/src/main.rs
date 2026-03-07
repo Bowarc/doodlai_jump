@@ -6,14 +6,6 @@ use plotters::{drawing::IntoDrawingArea as _, prelude::SVGBackend};
 use rand::{rngs::StdRng, Rng, SeedableRng};
 use std::io::Write as _;
 
-fn dt_scale(frame_dt: f64, reference_dt: f64) -> f32 {
-    if reference_dt > 0.0 {
-        (frame_dt / reference_dt) as f32
-    } else {
-        1.0
-    }
-}
-
 #[macro_use]
 extern crate log;
 
@@ -64,8 +56,7 @@ fn play_game(brain: &Brain, cfg: &TrainerCli, rng: &mut impl Rng) -> f32 {
 
     while game.score() < 100_000. {
         let frame_dt = cfg.frame_delta_time(rng);
-        let scale = dt_scale(frame_dt, cfg.game_delta_time());
-        let output = brain.predict(ai_player::generate_inputs(&game, scale));
+        let output = brain.predict(ai_player::generate_inputs(&game, frame_dt as f32));
 
         ai_player::apply_action(&mut game, &output);
 

@@ -21,7 +21,7 @@ const OBJECT_DATA_LEN: usize = 2;
 ///
 /// Layout:
 /// - player vertical velocity (scaled)
-/// - dt scale (caller‑provided, typically `frame_dt / reference_dt`)
+/// - raw frame dt in seconds (scaled down to keep values small)
 /// - for each of the `NB_PLATFORM_IN` nearest platforms:
 ///   - dx (wrapped, normalised to roughly \[-1, 1\])
 ///   - dy (normalised by game height)
@@ -40,24 +40,22 @@ fn wrapped_dx(player_x: f64, target_x: f64, width: f64) -> f64 {
 
 /// Build the neural‑network input array from the current game state.
 ///
-/// * `game`     – current game state.
-/// * `dt_scale` – caller‑computed frame‑time ratio (e.g. `frame_dt / reference_dt`).
-///                Pass `1.0` when running at a fixed timestep.
-///
-/// Platforms are already sorted top→bottom by the game's recycling logic, so we
-/// find the split point (first platform below the player) and walk outward from
-/// there to collect the `NB_PLATFORM_IN` nearest platforms.
-pub fn generate_inputs(game: &doodl_jump::Game, dt_scale: f32) -> [f32; AGENT_IN] {
+/// * `game` – current game state.
+/// * `dt`   – raw frame delta‑time in seconds. This is passed straight to the
+///   network (scaled down by 10× to keep values in a reasonable range) so the
+///   agent can learn to compensate for varying frame durations regardless of
+///   what framerate it was trained at.
+pub fn generate_inputs(game: &doodl_jump::Game, dt: f32) -> [f32; AGENT_IN] {
     let mut inputs = Vec::with_capacity(AGENT_IN);
     let player_center = game.player.rect.center();
 
-    // 0: scaled vertical velocity to help with stability
+    // 1) Scaled vertical velocity
     inputs.push((game.player.velocity.y / 1000.0) as f32);
 
-    // 1: dt scale so the network can compensate for variable frame time
-    inputs.push(dt_scale);
+    // 2) Raw dt scaled down (e.g. 0.033s at 30fps → ~0.0033)
+    inputs.push(dt * 0.1);
 
-    // 2: Nearest platforms
+    // 3) Nearest platforms
     //
     // Platforms are ordered front (top / smallest y) → back (bottom / largest y).
     // Find the split: first index whose y > player y. Everything before it is
@@ -73,12 +71,11 @@ pub fn generate_inputs(game: &doodl_jump::Game, dt_scale: f32) -> [f32; AGENT_IN
     // Walk outward from the split collecting the nearest platforms.
     //   above_idx counts backwards from split (nearest above first)
     //   below_idx counts forwards  from split (nearest below first)
-    let mut above_idx = split; // next above candidate is split - 1
-    let mut below_idx = split; // next below candidate is split
+    let mut above_idx = split;
+    let mut below_idx = split;
     let mut count = 0usize;
 
     while count < NB_PLATFORM_IN && (above_idx > 0 || below_idx < len) {
-        // Distances of the two candidates (if they exist)
         let above_dy = if above_idx > 0 {
             Some((platforms[above_idx - 1].rect.center().y - player_center.y).abs())
         } else {
@@ -129,9 +126,9 @@ pub fn generate_inputs(game: &doodl_jump::Game, dt_scale: f32) -> [f32; AGENT_IN
 /// Execute the action chosen by the network on the game.
 ///
 /// Picks the output neuron with the highest activation:
-/// - 0 → no action
-/// - 1 → move left
-/// - 2 → move right
+/// - 0 -> no action
+/// - 1 -> move left
+/// - 2 -> move right
 pub fn apply_action(game: &mut doodl_jump::Game, output: &[f32; AGENT_OUT]) {
     match output.iter().max_index().unwrap() {
         0 => {}
