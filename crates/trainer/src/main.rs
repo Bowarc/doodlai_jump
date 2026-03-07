@@ -1,10 +1,18 @@
+use ai_player::Brain;
 use clap::Parser;
 use genetic_rs_extras::{pb::ProgressObserver, plot::FitnessPlotter};
 use neat::*;
 use plotters::{drawing::IntoDrawingArea as _, prelude::SVGBackend};
 use rand::{rngs::StdRng, Rng, SeedableRng};
 use std::io::Write as _;
-use trainer::Brain;
+
+fn dt_scale(frame_dt: f64, reference_dt: f64) -> f32 {
+    if reference_dt > 0.0 {
+        (frame_dt / reference_dt) as f32
+    } else {
+        1.0
+    }
+}
 
 #[macro_use]
 extern crate log;
@@ -56,18 +64,10 @@ fn play_game(brain: &Brain, cfg: &TrainerCli, rng: &mut impl Rng) -> f32 {
 
     while game.score() < 100_000. {
         let frame_dt = cfg.frame_delta_time(rng);
-        let output = brain.predict(trainer::generate_inputs(
-            &game,
-            frame_dt,
-            cfg.game_delta_time(),
-        ));
+        let scale = dt_scale(frame_dt, cfg.game_delta_time());
+        let output = brain.predict(ai_player::generate_inputs(&game, scale));
 
-        match output.iter().max_index().unwrap() {
-            0 => (), // No action
-            1 => game.player_move_left(),
-            2 => game.player_move_right(),
-            _ => (),
-        }
+        ai_player::apply_action(&mut game, &output);
 
         game.update(frame_dt);
         elapsed_s += frame_dt;

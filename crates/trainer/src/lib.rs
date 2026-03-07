@@ -1,59 +1,42 @@
+//! Shared trainer configuration and utilities.
+
+/// Number of game attempts used to average a genome's fitness.
+/// The trainer binary exposes its own CLI defaults; these constants are
+/// here for library users that prefer compile-time defaults.
 pub const NB_GAMES: usize = 3;
-pub const GAME_TIME_S: usize = 20; // Nb of secconds we let the ai play the game before registering their scrore
-pub const GAME_FPS: usize = 20; // 60
-pub const GAME_DELTA_TIME: f64 = 1. / GAME_FPS as f64;
+
+/// Number of seconds we let the AI play before registering the score.
+pub const GAME_TIME_S: usize = 20;
+
+/// Simulation frames per second used by the game update loop.
+pub const GAME_FPS: usize = 20;
+
+/// Fixed time step derived from `GAME_FPS`.
+pub const GAME_DELTA_TIME: f64 = 1.0 / GAME_FPS as f64;
+
+/// Number of generations to run during training.
 pub const NB_GENERATIONS: usize = 1000;
+
+/// Number of genomes per generation.
 pub const NB_GENOME_PER_GEN: usize = 500;
+
+/// Default mutation rate applied during crossover/repopulation.
 pub const MUTATION_RATE: f32 = 0.05;
+
+/// Number of mutation passes during reproduction.
 pub const MUTATION_PASSES: usize = 3;
 
-const NB_PLATFORM_IN: usize = 3;
-const OBJECT_DATA_LEN: usize = 2;
-// Player y velocity + processed dt scale + data for each platform we want to send
-pub const AGENT_IN: usize = 1 + 1 + NB_PLATFORM_IN * OBJECT_DATA_LEN;
-pub const AGENT_OUT: usize = 3; // None, Left, right
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-fn wrapped_dx(player_x: f64, target_x: f64, width: f64) -> f64 {
-    (target_x - player_x + width / 2.).rem_euclid(width) - width / 2.
-}
-
-pub fn generate_inputs(game: &doodl_jump::Game, processed_dt: f64, reference_dt: f64) -> [f32; AGENT_IN] {
-    let mut inputs = Vec::with_capacity(AGENT_IN);
-    let player_center = game.player.rect.center();
-    let dt_scale = if reference_dt > 0.0 {
-        processed_dt / reference_dt
-    } else {
-        1.0
-    };
-
-    inputs.push((game.player.velocity.y / 1000.) as f32);
-    inputs.push(dt_scale as f32);
-
-    let mut platform_data = game
-        .platforms
-        .iter()
-        .map(|platform| {
-            let platform_center = platform.rect.center();
-            let dx = wrapped_dx(player_center.x, platform_center.x, doodl_jump::GAME_WIDTH);
-            let dy = platform_center.y - player_center.y;
-            let distance_sq = dx * dx + dy * dy;
-
-            (distance_sq, dx, dy)
-        })
-        .collect::<Vec<_>>();
-
-    platform_data.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap_or(std::cmp::Ordering::Equal));
-
-    for (_, dx, dy) in platform_data.into_iter().take(NB_PLATFORM_IN) {
-        inputs.push((dx / (doodl_jump::GAME_WIDTH * 0.5)) as f32);
-        inputs.push((dy / doodl_jump::GAME_HEIGHT) as f32);
+    #[test]
+    fn sanity_constants() {
+        // Simple sanity checks so these values are exercised in CI
+        assert!(NB_GAMES > 0);
+        assert!(GAME_FPS > 0);
+        assert!(NB_GENERATIONS > 0);
+        assert!(NB_GENOME_PER_GEN > 0);
+        assert!((0.0..=1.0).contains(&MUTATION_RATE));
     }
-
-    while inputs.len() < AGENT_IN {
-        inputs.push(0.0);
-    }
-
-    inputs.try_into().unwrap()
 }
-
-pub type Brain = neat::NeuralNetwork<AGENT_IN, AGENT_OUT>;
