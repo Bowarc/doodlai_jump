@@ -116,7 +116,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     let mut sim = GeneticSim::new(
-        Vec::gen_random(&mut rng, cfg.nb_genome_per_gen),
+        Vec::gen_random(&mut rng, cfg.population_size),
         FitnessEliminator::builder()
             .fitness_fn(fitness_fn)
             .observer(observer)

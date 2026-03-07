@@ -3,14 +3,42 @@ use std::collections::VecDeque;
 
 const GRAVITY: f64 = 400.;
 const JUMP_HEIGHT: f64 = 575.;
-const SPEED: f64 = 400.;
+const SPEED: f64 = 250.;
 
 const PLAYER_SIZE: f64 = 30.;
+
+#[derive(Default, Clone, Copy, Debug)]
+pub enum MoveDirection {
+    #[default]
+    None,
+    Left,
+    Right,
+}
+
+impl From<usize> for MoveDirection {
+    fn from(value: usize) -> Self {
+        match value {
+            0 => Self::None,
+            1 => Self::Left,
+            _ => Self::Right,
+        }
+    }
+}
+
+impl From<MoveDirection> for i8 {
+    fn from(value: MoveDirection) -> Self {
+        match value {
+            MoveDirection::None => 0,
+            MoveDirection::Left => -1,
+            MoveDirection::Right => 1,
+        }
+    }
+}
 
 pub struct Player {
     pub rect: math::Rect,
     pub velocity: math::Vec2,
-    pub current_direction: Option<bool>, // True -> Right as True == 1 == positive movement == Right
+    pub current_direction: MoveDirection, // True -> Right as True == 1 == positive movement == Right
     ignore_collisions_tag: bool,
 }
 
@@ -23,16 +51,8 @@ impl Player {
                 0.,
             ),
             velocity: math::Vec2::ZERO,
-            current_direction: None,
+            current_direction: MoveDirection::None,
             ignore_collisions_tag: false,
-        }
-    }
-
-    pub fn direction(&self) -> i8 {
-        match self.current_direction {
-            Some(true) => 1,
-            Some(false) => -1,
-            None => 0,
         }
     }
 
@@ -45,9 +65,9 @@ impl Player {
         // println!("{}", self.rect.center());
 
         self.velocity.y += GRAVITY * dt;
-        self.velocity.x = SPEED * self.direction() as f64;
+        self.velocity.x = SPEED * i8::from(self.current_direction) as f64;
 
-        self.current_direction = None;
+        self.current_direction = MoveDirection::None;
 
         let wrapped_x = self.rect.center().x.rem_euclid(crate::GAME_WIDTH);
         self.rect

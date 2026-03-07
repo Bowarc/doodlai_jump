@@ -3,6 +3,8 @@ use platform::Platform;
 use player::Player;
 use std::collections::VecDeque;
 
+use crate::player::MoveDirection;
+
 pub mod enemy;
 pub mod platform;
 pub mod player;
@@ -132,12 +134,8 @@ impl Game {
         }
     }
 
-    pub fn player_move_left(&mut self) {
-        self.player.current_direction = Some(false)
-    }
-
-    pub fn player_move_right(&mut self) {
-        self.player.current_direction = Some(true)
+    pub fn player_move(&mut self, direction: MoveDirection) {
+        self.player.current_direction = direction;
     }
 
     pub fn player_shoot(&mut self) {}

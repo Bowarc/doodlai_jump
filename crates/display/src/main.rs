@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use ai_player::Brain;
-use doodl_jump::Game;
+use doodl_jump::{Game, player::MoveDirection};
 use macroquad::prelude::*;
 
 // ---------------------------------------------------------------------------
@@ -180,10 +180,10 @@ fn update_user_playing(game: &mut Game) -> Transition {
 
     // Input
     if is_key_down(KeyCode::Left) || is_key_down(KeyCode::A) {
-        game.player_move_left();
+        game.player_move(MoveDirection::Left);
     }
     if is_key_down(KeyCode::Right) || is_key_down(KeyCode::D) {
-        game.player_move_right();
+        game.player_move(MoveDirection::Right);
     }
 
     let dt = get_frame_time() as f64;

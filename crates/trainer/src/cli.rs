@@ -25,9 +25,9 @@ pub struct TrainerCli {
     #[arg(long, default_value_t = 150)]
     pub nb_generations: usize,
 
-    /// Number of genomes per generation.
-    #[arg(long, default_value_t = 500)]
-    pub nb_genome_per_gen: usize,
+    /// Number of agents per generation.
+    #[arg(long, default_value_t = 250)]
+    pub population_size: usize,
 
     /// Mutation rate applied during crossover/repopulation.
     #[arg(long, default_value_t = 0.05)]
@@ -88,7 +88,7 @@ impl TrainerCli {
             return Err("--nb-generations must be greater than 0".to_string());
         }
 
-        if self.nb_genome_per_gen == 0 {
+        if self.population_size == 0 {
             return Err("--nb-genome-per-gen must be greater than 0".to_string());
         }
 
