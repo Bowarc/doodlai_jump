@@ -37,6 +37,14 @@ pub struct TrainerCli {
     #[arg(long, default_value_t = 3)]
     pub mutation_passes: usize,
 
+    /// Maximum possible score in the game before it is considered a "win" (and the run is ended).
+    #[arg(long, default_value_t = 75_000.0)]
+    pub max_game_score: f32,
+
+    /// Speciation threshold used by the NEAT algorithm to group similar genomes together.
+    #[arg(long, default_value_t = 0.1)]
+    pub speciation_threshold: f32,
+
     /// Seconds without score increase before marking the run as stagnant.
     #[arg(long, default_value_t = 10.0)]
     pub stagnation_timeout_s: f64,

@@ -18,11 +18,9 @@ log = "0.4.29"
 time = {git = "https://github.com/Bowarc/Crates.git", package = "time"}
 random = {git = "https://github.com/Bowarc/Crates.git", package = "random"}
 math = { path = "crates/math" }
-glam = "0.32.1"
 # neat = { version = "1.0.2",  features = ["serde"] }
 neat = { git = "https://github.com/HyperCodec/neat", branch = "speciation", features = ["serde"] }
-serde_json = "1.0.149"
-genetic-rs = { version = "1.4.0", features = ["derive"] }
+genetic-rs = { version = "1.4.1", features = ["derive"] }
 doodl-jump = { path = "crates/doodl-jump" }
 ai-player = { path = "crates/ai-player" }
 bincode-next = { version = "2.1.0", features = ["serde"] }

@@ -54,7 +54,7 @@ fn play_game(brain: &Brain, cfg: &TrainerCli, rng: &mut impl Rng) -> f32 {
     let mut saved_score = game.score();
     let mut save_timer = time::DTDelay::new(cfg.stagnation_timeout_s);
 
-    while game.score() < 100_000. {
+    while game.score() < cfg.max_game_score {
         let frame_dt = cfg.frame_delta_time(rng);
         let output = brain.predict(ai_player::generate_inputs(&game, frame_dt as f32));
 
@@ -115,19 +115,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         seed: rng.random(),
     };
 
+    let fitness_elim = FitnessEliminator::builder()
+        .fitness_fn(fitness_fn)
+        .observer(observer)
+        .build_or_panic();
+
+    let crossover = CrossoverRepopulator::new(
+        cfg.mutation_rate,
+        ReproductionSettings {
+            mutation_passes: cfg.mutation_passes,
+            ..Default::default()
+        },
+    );
+
+    let diverg = DivergenceWeights::default();
+
     let mut sim = GeneticSim::new(
         Vec::gen_random(&mut rng, cfg.population_size),
-        FitnessEliminator::builder()
-            .fitness_fn(fitness_fn)
-            .observer(observer)
-            .build_or_panic(),
-        CrossoverRepopulator::new(
-            cfg.mutation_rate,
-            ReproductionSettings {
-                mutation_passes: cfg.mutation_passes,
-                ..Default::default()
-            },
-        ),
+        SpeciatedFitnessEliminator::from_fitness_eliminator(fitness_elim, cfg.speciation_threshold, diverg.clone()),
+        SpeciatedCrossoverRepopulator::from_crossover(crossover, cfg.speciation_threshold, ActionIfIsolated::CrossoverSimilarSpecies, diverg),
     );
 
     for _ in 0..cfg.nb_generations {
@@ -135,14 +141,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             break;
         }
         sim.next_generation();
-        sim.eliminator.fitness_fn.seed = rng.random();
+        sim.eliminator.inner.fitness_fn.seed = rng.random();
     }
 
     if running.load(std::sync::atomic::Ordering::SeqCst) {
-        sim.eliminator.observer.0 .1.finish();
+        sim.eliminator.inner.observer.0 .1.finish();
         debug!("Finished all generations");
     } else {
-        sim.eliminator.observer.0 .1.finish_and_clear();
+        sim.eliminator.inner.observer.0 .1.finish_and_clear();
         debug!("Received stop signal, stopping training...");
     }
 
@@ -154,7 +160,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let plot_path = output.join("fitness.svg");
     let root = SVGBackend::new(&plot_path, (640, 480)).into_drawing_area();
 
-    sim.eliminator.observer.1.plot(&root)?;
+    sim.eliminator.inner.observer.1.plot(&root)?;
 
     Ok(())
 }
