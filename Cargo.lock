@@ -1703,6 +1703,8 @@ dependencies = [
  "neat",
  "plotters",
  "rand 0.10.0",
+ "rayon",
+ "serde",
  "time",
 ]
 

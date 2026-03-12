@@ -4,7 +4,15 @@ use genetic_rs_extras::{pb::ProgressObserver, plot::FitnessPlotter};
 use neat::*;
 use plotters::{drawing::IntoDrawingArea as _, prelude::SVGBackend};
 use rand::{rngs::StdRng, Rng, SeedableRng};
-use std::io::Write as _;
+use serde::{Deserialize, Serialize};
+use std::{
+    io::Write as _,
+    path::{Path, PathBuf},
+    sync::{
+        Arc,
+        atomic::{AtomicU64, Ordering},
+    },
+};
 
 #[macro_use]
 extern crate log;
@@ -16,12 +24,12 @@ use crate::cli::TrainerCli;
 
 struct TrainerFitnessFn<'a> {
     cfg: &'a TrainerCli,
-    seed: u64,
+    seed: Arc<AtomicU64>,
 }
 
 impl<'a> FitnessFn<Brain> for TrainerFitnessFn<'a> {
     fn fitness(&self, brain: &Brain) -> f32 {
-        let mut rng = StdRng::seed_from_u64(self.seed);
+        let mut rng = StdRng::seed_from_u64(self.seed.load(Ordering::SeqCst));
         let mut total_score = 0.0;
 
         for _ in 0..self.cfg.nb_games {
@@ -33,7 +41,7 @@ impl<'a> FitnessFn<Brain> for TrainerFitnessFn<'a> {
 }
 
 struct BestAgentSaver {
-    path: std::path::PathBuf,
+    path: PathBuf,
 }
 
 impl FitnessObserver<Brain> for BestAgentSaver {
@@ -44,6 +52,108 @@ impl FitnessObserver<Brain> for BestAgentSaver {
             .expect("Failed to serialize agent");
         file.write_all(&bytes)
             .expect("Failed to write best agent to file");
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+struct GenerationDump {
+    seed: u64,
+    genomes: Vec<Brain>,
+}
+
+impl GenerationDump {
+    pub fn from_observed(seed: u64, fitnesses: &[(Brain, f32)]) -> Self {
+        Self {
+            seed,
+            genomes: fitnesses.iter().map(|(brain, _)| brain.clone()).collect(),
+        }
+    }
+}
+
+struct GenerationDumper {
+    output: PathBuf,
+    generation: usize,
+    seed: Arc<AtomicU64>,
+}
+
+impl FitnessObserver<Brain> for GenerationDumper {
+    fn observe(&mut self, fitnesses: &[(Brain, f32)]) {
+        let dump = GenerationDump::from_observed(self.seed.load(Ordering::SeqCst), fitnesses);
+        let bytes = bincode_next::serde::encode_to_vec(&dump, bincode_next::config::standard())
+            .expect("Failed to serialize generation dump");
+        let mut file = std::fs::File::create(
+            self.output
+                .join(format!("gen_{:04}.bin", self.generation)),
+        )
+        .expect("Failed to create generation dump file");
+        file.write_all(&bytes)
+            .expect("Failed to write generation dump to file");
+        self.generation += 1;
+    }
+}
+
+enum TrainingOutputObserver {
+    BestAgent(BestAgentSaver),
+    FullGenerations(GenerationDumper),
+}
+
+impl TrainingOutputObserver {
+    fn from_config(cfg: &TrainerCli, output_dir: &Path, seed: Arc<AtomicU64>) -> std::io::Result<Self> {
+        if cfg.dump_full_gens {
+            let gens_dir = output_dir.join("gens");
+            std::fs::create_dir_all(&gens_dir)?;
+
+            Ok(Self::FullGenerations(GenerationDumper {
+                output: gens_dir,
+                generation: 0,
+                seed,
+            }))
+        } else {
+            Ok(Self::BestAgent(BestAgentSaver {
+                path: output_dir.join("best.nn"),
+            }))
+        }
+    }
+}
+
+impl FitnessObserver<Brain> for TrainingOutputObserver {
+    fn observe(&mut self, fitnesses: &[(Brain, f32)]) {
+        match self {
+            Self::BestAgent(observer) => observer.observe(fitnesses),
+            Self::FullGenerations(observer) => observer.observe(fitnesses),
+        }
+    }
+}
+
+struct TrainerObserver {
+    progress: ProgressObserver,
+    plotter: FitnessPlotter,
+    output: TrainingOutputObserver,
+}
+
+impl TrainerObserver {
+    fn from_config(cfg: &TrainerCli, output_dir: &Path, seed: Arc<AtomicU64>) -> std::io::Result<Self> {
+        Ok(Self {
+            progress: ProgressObserver::new_with_default_style(cfg.nb_generations as u64),
+            plotter: FitnessPlotter::new(),
+            output: TrainingOutputObserver::from_config(cfg, output_dir, seed)?,
+        })
+    }
+
+    fn finish(&self) {
+        self.progress.finish();
+    }
+
+    fn finish_and_clear(&self) {
+        self.progress.finish_and_clear();
+    }
+}
+
+impl FitnessObserver<Brain> for TrainerObserver {
+    fn observe(&mut self, fitnesses: &[(Brain, f32)]) {
+        self.progress.observe(fitnesses);
+        self.plotter.observe(fitnesses);
+        self.output.observe(fitnesses);
     }
 }
 
@@ -101,19 +211,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     std::fs::create_dir_all(&cfg.output_dir)?;
     let output = cfg.output_dir.clone();
 
-    let observer = BestAgentSaver {
-        path: output.join("best.nn"),
-    }
-    .layer(ProgressObserver::new_with_default_style(
-        cfg.nb_generations as u64,
-    ))
-    .layer(FitnessPlotter::new());
-
     let mut rng = rand::rng();
+    let seed = Arc::new(AtomicU64::new(rng.random()));
     let fitness_fn = TrainerFitnessFn {
         cfg: &cfg,
-        seed: rng.random(),
+        seed: Arc::clone(&seed),
     };
+    let observer = TrainerObserver::from_config(&cfg, &output, Arc::clone(&seed))?;
 
     let fitness_elim = FitnessEliminator::builder()
         .fitness_fn(fitness_fn)
@@ -141,14 +245,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             break;
         }
         sim.next_generation();
-        sim.eliminator.inner.fitness_fn.seed = rng.random();
+        seed.store(rng.random(), Ordering::SeqCst);
     }
 
     if running.load(std::sync::atomic::Ordering::SeqCst) {
-        sim.eliminator.inner.observer.0 .1.finish();
+        sim.eliminator.inner.observer.finish();
         debug!("Finished all generations");
     } else {
-        sim.eliminator.inner.observer.0 .1.finish_and_clear();
+        sim.eliminator.inner.observer.finish_and_clear();
         debug!("Received stop signal, stopping training...");
     }
 
@@ -160,7 +264,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let plot_path = output.join("fitness.svg");
     let root = SVGBackend::new(&plot_path, (640, 480)).into_drawing_area();
 
-    sim.eliminator.inner.observer.1.plot(&root)?;
+    sim.eliminator.inner.observer.plotter.plot(&root)?;
 
     Ok(())
 }

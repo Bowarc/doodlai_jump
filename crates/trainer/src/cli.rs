@@ -60,6 +60,11 @@ pub struct TrainerCli {
     /// Directory where training outputs are saved.
     #[arg(long, default_value = "./sim")]
     pub output_dir: PathBuf,
+
+    /// Whether to dump full generations (all genomes), each to their own subdirectory.
+    /// This uses a lot of disk space, but allows for more detailed analysis and visualization of the training process.
+    #[arg(long, default_value_t = false)]
+    pub dump_full_gens: bool,
 }
 
 impl TrainerCli {
@@ -114,6 +119,10 @@ impl TrainerCli {
 
         if self.fitness_time_penalty_per_s < 0.0 {
             return Err("--fitness-time-penalty-per-s must be >= 0".to_string());
+        }
+
+        if self.speciation_threshold <= 0.0 {
+            return Err("--speciation-threshold must be greater than 0".to_string());
         }
 
         Ok(())
