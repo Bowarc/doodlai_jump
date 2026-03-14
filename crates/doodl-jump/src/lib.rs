@@ -134,11 +134,9 @@ impl Game {
         let spacing = GAME_HEIGHT / PLATFORMS_PER_PLAYER as f64;
         let bottom_offscreen_threshold = GAME_HEIGHT + platform::PLATFORM_BASE_HEIGHT;
 
-        // Determine the lowest (worst) camera: the maximum scroll value.
-        // Platforms should not be removed until they are off the lowest agent's screen.
         let lowest_scroll = self.scrolls.iter().copied().max().unwrap_or(0) as f64;
 
-        // Despawn platforms only when they are off the bottom of the lowest player's screen.
+        // despawn platforms only when they are off the bottom of the lowest player's screen.
         while self
             .platforms
             .back()

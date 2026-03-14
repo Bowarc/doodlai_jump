@@ -4,6 +4,7 @@
 //! (perception) and action application (behavior).
 
 use neat::MaxIndex;
+use serde::{Deserialize, Serialize};
 
 /// How many nearest platforms we feed into the network.
 const NB_PLATFORM_IN: usize = 5;
@@ -112,4 +113,19 @@ pub fn generate_inputs(game: &doodl_jump::Game, player_index: usize, dt: f32) ->
 /// - 2 -> move right
 pub fn apply_action(game: &mut doodl_jump::Game, player_index: usize, output: &[f32; AGENT_OUT]) {
     game.player_move(player_index, output.iter().max_index().unwrap().into());
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct GenerationDump {
+    pub seed: u64,
+    pub genomes: Vec<Brain>,
+}
+
+impl GenerationDump {
+    pub fn from_observed(seed: u64, fitnesses: &[(Brain, f32)]) -> Self {
+        Self {
+            seed,
+            genomes: fitnesses.iter().map(|(brain, _)| brain.clone()).collect(),
+        }
+    }
 }

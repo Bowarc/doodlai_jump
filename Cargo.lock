@@ -23,6 +23,7 @@ version = "0.1.0"
 dependencies = [
  "doodl-jump",
  "neat",
+ "serde",
 ]
 
 [[package]]
@@ -1659,7 +1660,6 @@ dependencies = [
  "plotters",
  "rand",
  "rayon",
- "serde",
  "time",
 ]
 

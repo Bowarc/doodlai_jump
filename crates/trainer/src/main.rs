@@ -1,10 +1,9 @@
-use ai_player::Brain;
+use ai_player::{Brain, GenerationDump};
 use clap::Parser;
 use genetic_rs_extras::{pb::ProgressObserver, plot::FitnessPlotter};
 use neat::*;
 use plotters::{drawing::IntoDrawingArea as _, prelude::SVGBackend};
 use rand::{rngs::StdRng, Rng, SeedableRng};
-use serde::{Deserialize, Serialize};
 use std::{
     io::Write as _,
     path::{Path, PathBuf},
@@ -52,21 +51,6 @@ impl FitnessObserver<Brain> for BestAgentSaver {
             .expect("Failed to serialize agent");
         file.write_all(&bytes)
             .expect("Failed to write best agent to file");
-    }
-}
-
-#[derive(Serialize, Deserialize)]
-struct GenerationDump {
-    seed: u64,
-    genomes: Vec<Brain>,
-}
-
-impl GenerationDump {
-    pub fn from_observed(seed: u64, fitnesses: &[(Brain, f32)]) -> Self {
-        Self {
-            seed,
-            genomes: fitnesses.iter().map(|(brain, _)| brain.clone()).collect(),
-        }
     }
 }
 
