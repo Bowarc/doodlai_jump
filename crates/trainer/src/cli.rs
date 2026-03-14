@@ -72,18 +72,6 @@ impl TrainerCli {
         1.0 / self.game_fps as f64
     }
 
-    pub fn frame_delta_time(&self, rng: &mut impl rand::Rng) -> f64 {
-        let base_dt = self.game_delta_time();
-        if !self.variable_dt {
-            return base_dt;
-        }
-
-        let min_scale = 1.0 - self.variable_dt_jitter;
-        let max_scale = 1.0 + self.variable_dt_jitter;
-
-        base_dt * rng.random_range(min_scale..=max_scale)
-    }
-
     pub fn validate(&self) -> Result<(), String> {
         if self.nb_games == 0 {
             return Err("--nb-games must be greater than 0".to_string());

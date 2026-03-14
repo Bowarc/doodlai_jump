@@ -115,17 +115,26 @@ pub fn apply_action(game: &mut doodl_jump::Game, player_index: usize, output: &[
     game.player_move(player_index, output.iter().max_index().unwrap().into());
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct GenerationDump {
     pub seed: u64,
     pub genomes: Vec<Brain>,
+    pub base_dt: f64,
+    pub dt_jitter: Option<f64>,
 }
 
 impl GenerationDump {
-    pub fn from_observed(seed: u64, fitnesses: &[(Brain, f32)]) -> Self {
+    pub fn from_observed(
+        seed: u64,
+        base_dt: f64,
+        dt_jitter: Option<f64>,
+        fitnesses: &[(Brain, f32)],
+    ) -> Self {
         Self {
             seed,
             genomes: fitnesses.iter().map(|(brain, _)| brain.clone()).collect(),
+            base_dt,
+            dt_jitter,
         }
     }
 }

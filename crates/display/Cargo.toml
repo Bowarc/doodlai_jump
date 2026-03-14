@@ -8,4 +8,7 @@ doodl-jump.workspace = true
 ai-player.workspace = true
 bincode-next.workspace = true
 macroquad = "0.4.14"
+egui-macroquad = "0.17.3"
 rfd = "0.17.2"
+rand.workspace = true
+rayon = "1.11.0"

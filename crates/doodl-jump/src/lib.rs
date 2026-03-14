@@ -193,4 +193,11 @@ impl Game {
             .map(|s| -(*s as f32))
             .unwrap_or(0.0)
     }
+
+    pub fn jittered_dt(&mut self, base_dt: f64, jitter: f64) -> f64 {
+        let min_scale = 1.0 - jitter;
+        let max_scale = 1.0 + jitter;
+
+        base_dt * self.rng.random_range(min_scale..=max_scale)
+    }
 }

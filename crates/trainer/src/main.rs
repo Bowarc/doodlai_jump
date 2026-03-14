@@ -32,7 +32,8 @@ impl<'a> FitnessFn<Brain> for TrainerFitnessFn<'a> {
         let mut total_score = 0.0;
 
         for _ in 0..self.cfg.nb_games {
-            total_score += play_game(brain, self.cfg, &mut rng);
+            let seed = rng.next_u64();
+            total_score += play_game(brain, self.cfg, seed);
         }
 
         total_score / self.cfg.nb_games as f32
@@ -58,11 +59,18 @@ struct GenerationDumper {
     output: PathBuf,
     generation: usize,
     seed: Arc<AtomicU64>,
+    base_dt: f64,
+    dt_jitter: Option<f64>,
 }
 
 impl FitnessObserver<Brain> for GenerationDumper {
     fn observe(&mut self, fitnesses: &[(Brain, f32)]) {
-        let dump = GenerationDump::from_observed(self.seed.load(Ordering::SeqCst), fitnesses);
+        let dump = GenerationDump::from_observed(
+            self.seed.load(Ordering::SeqCst),
+            self.base_dt,
+            self.dt_jitter,
+            fitnesses,
+        );
         let bytes = bincode_next::serde::encode_to_vec(&dump, bincode_next::config::standard())
             .expect("Failed to serialize generation dump");
         let mut file =
@@ -93,6 +101,8 @@ impl TrainingOutputObserver {
                 output: gens_dir,
                 generation: 0,
                 seed,
+                base_dt: cfg.game_delta_time(),
+                dt_jitter: cfg.variable_dt.then_some(cfg.variable_dt_jitter),
             }))
         } else {
             Ok(Self::BestAgent(BestAgentSaver {
@@ -147,18 +157,19 @@ impl FitnessObserver<Brain> for TrainerObserver {
     }
 }
 
-fn play_game(brain: &Brain, cfg: &TrainerCli, rng: &mut impl Rng) -> f32 {
-    // Seed each game from the shared RNG so all agents are evaluated on the same
-    // game(s) for a given generation/seed, enabling fair deterministic comparison.
-    let game_seed: u64 = rng.random();
-    let mut game = doodl_jump::Game::new_with_seed(1, game_seed);
+fn play_game(brain: &Brain, cfg: &TrainerCli, seed: u64) -> f32 {
+    let mut game = doodl_jump::Game::new_with_seed(1, seed);
     let mut elapsed_s = 0.0;
 
     let mut saved_score = game.score(0);
     let mut save_timer = time::DTDelay::new(cfg.stagnation_timeout_s);
 
     while game.score(0) < cfg.max_game_score {
-        let frame_dt = cfg.frame_delta_time(rng);
+        let frame_dt = if cfg.variable_dt {
+            game.jittered_dt(cfg.game_delta_time(), cfg.variable_dt_jitter)
+        } else {
+            cfg.game_delta_time()
+        };
         let output = brain.predict(ai_player::generate_inputs(&game, 0, frame_dt as f32));
 
         ai_player::apply_action(&mut game, 0, &output);
