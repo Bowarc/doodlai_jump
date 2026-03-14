@@ -31,31 +31,61 @@ fn wrapped_dx(player_x: f64, target_x: f64, width: f64) -> f64 {
     (target_x - player_x + width / 2.0).rem_euclid(width) - width / 2.0
 }
 
+/// Index of the first platform that is on-screen for the given player (by camera scroll).
+///
+/// Platforms are sorted: front = top (smallest y), back = bottom (largest y).
+/// "On-screen" here means the platform's center is >= top of the visible window.
+fn first_onscreen_platform_index(
+    platforms: &std::collections::VecDeque<doodl_jump::platform::Platform>,
+    scroll: f64,
+) -> usize {
+    // Visible window: [scroll, scroll + GAME_HEIGHT]
+    let top = scroll;
+
+    // Find first platform whose center is not above the top edge.
+    // If all are above, return len() (caller will clamp).
+    for (i, p) in platforms.iter().enumerate() {
+        if p.rect.center().y >= top {
+            return i;
+        }
+    }
+
+    platforms.len()
+}
+
 /// Build the neural network input array from the current game state.
 ///
-/// * `game` - current game state.
-/// * `dt`   - raw frame delta-time in seconds. This is passed straight to the
+/// * `game`         - current game state.
+/// * `player_index` - which player we are generating inputs for.
+/// * `dt`           - raw frame delta-time in seconds. This is passed straight to the
 ///   network (scaled down by 10x to keep values in a reasonable range) so the
 ///   agent can learn to compensate for varying frame durations regardless of
 ///   what framerate it was trained at.
-pub fn generate_inputs(game: &doodl_jump::Game, dt: f32) -> [f32; AGENT_IN] {
+pub fn generate_inputs(game: &doodl_jump::Game, player_index: usize, dt: f32) -> [f32; AGENT_IN] {
     let mut inputs = Vec::with_capacity(AGENT_IN);
-    let player_center = game.player.rect.center();
+
+    let player = &game.players[player_index];
+    let player_center = player.rect.center();
 
     // 0: Scaled vertical velocity
-    inputs.push((game.player.velocity.y / 1000.0) as f32);
+    inputs.push((player.velocity.y / 1000.0) as f32);
 
     // 1: Raw dt scaled down (e.g. 0.033s at 30fps → ~0.0033)
     inputs.push(dt * 0.1);
 
-    // 2-7: Platforms
+    // Platforms: take from first on-screen platform to that index + NB_PLATFORM_IN.
     //
     // Platforms are ordered front (top / smallest y) -> back (bottom / largest y).
-    for platform in &game.platforms {
-        if inputs.len() == AGENT_IN {
-            break;
-        }
+    let scroll = game.scrolls[player_index] as f64;
+    let start = first_onscreen_platform_index(&game.platforms, scroll);
+    let end = (start + NB_PLATFORM_IN).min(game.platforms.len());
 
+    for platform in game
+        .platforms
+        .iter()
+        .skip(start)
+        .take(end.saturating_sub(start))
+    {
         let pc = platform.rect.center();
         let dx = wrapped_dx(player_center.x, pc.x, doodl_jump::GAME_WIDTH);
         let dy = pc.y - player_center.y;
@@ -80,6 +110,6 @@ pub fn generate_inputs(game: &doodl_jump::Game, dt: f32) -> [f32; AGENT_IN] {
 /// - 0 -> no action
 /// - 1 -> move left
 /// - 2 -> move right
-pub fn apply_action(game: &mut doodl_jump::Game, output: &[f32; AGENT_OUT]) {
-    game.player_move(output.iter().max_index().unwrap().into());
+pub fn apply_action(game: &mut doodl_jump::Game, player_index: usize, output: &[f32; AGENT_OUT]) {
+    game.player_move(player_index, output.iter().max_index().unwrap().into());
 }

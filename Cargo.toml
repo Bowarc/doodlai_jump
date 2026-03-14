@@ -16,8 +16,8 @@ opt-level = 3
 log = "0.4.29"
 
 time = {git = "https://github.com/Bowarc/Crates.git", package = "time"}
-random = {git = "https://github.com/Bowarc/Crates.git", package = "random"}
 math = { path = "crates/math" }
+rand = "0.10.0"
 # neat = { version = "1.0.2",  features = ["serde"] }
 neat = { git = "https://github.com/HyperCodec/neat", branch = "speciation", features = ["serde"] }
 genetic-rs = { version = "1.4.1", features = ["derive"] }

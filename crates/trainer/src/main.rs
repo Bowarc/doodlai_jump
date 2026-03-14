@@ -9,8 +9,8 @@ use std::{
     io::Write as _,
     path::{Path, PathBuf},
     sync::{
-        Arc,
         atomic::{AtomicU64, Ordering},
+        Arc,
     },
 };
 
@@ -81,11 +81,9 @@ impl FitnessObserver<Brain> for GenerationDumper {
         let dump = GenerationDump::from_observed(self.seed.load(Ordering::SeqCst), fitnesses);
         let bytes = bincode_next::serde::encode_to_vec(&dump, bincode_next::config::standard())
             .expect("Failed to serialize generation dump");
-        let mut file = std::fs::File::create(
-            self.output
-                .join(format!("gen_{:04}.bin", self.generation)),
-        )
-        .expect("Failed to create generation dump file");
+        let mut file =
+            std::fs::File::create(self.output.join(format!("gen_{:04}.bin", self.generation)))
+                .expect("Failed to create generation dump file");
         file.write_all(&bytes)
             .expect("Failed to write generation dump to file");
         self.generation += 1;
@@ -98,7 +96,11 @@ enum TrainingOutputObserver {
 }
 
 impl TrainingOutputObserver {
-    fn from_config(cfg: &TrainerCli, output_dir: &Path, seed: Arc<AtomicU64>) -> std::io::Result<Self> {
+    fn from_config(
+        cfg: &TrainerCli,
+        output_dir: &Path,
+        seed: Arc<AtomicU64>,
+    ) -> std::io::Result<Self> {
         if cfg.dump_full_gens {
             let gens_dir = output_dir.join("gens");
             std::fs::create_dir_all(&gens_dir)?;
@@ -132,7 +134,11 @@ struct TrainerObserver {
 }
 
 impl TrainerObserver {
-    fn from_config(cfg: &TrainerCli, output_dir: &Path, seed: Arc<AtomicU64>) -> std::io::Result<Self> {
+    fn from_config(
+        cfg: &TrainerCli,
+        output_dir: &Path,
+        seed: Arc<AtomicU64>,
+    ) -> std::io::Result<Self> {
         Ok(Self {
             progress: ProgressObserver::new_with_default_style(cfg.nb_generations as u64),
             plotter: FitnessPlotter::new(),
@@ -158,34 +164,39 @@ impl FitnessObserver<Brain> for TrainerObserver {
 }
 
 fn play_game(brain: &Brain, cfg: &TrainerCli, rng: &mut impl Rng) -> f32 {
-    let mut game = doodl_jump::Game::new();
+    // Seed each game from the shared RNG so all agents are evaluated on the same
+    // game(s) for a given generation/seed, enabling fair deterministic comparison.
+    let game_seed: u64 = rng.random();
+    let mut game = doodl_jump::Game::new_with_seed(1, game_seed);
     let mut elapsed_s = 0.0;
 
-    let mut saved_score = game.score();
+    let mut saved_score = game.score(0);
     let mut save_timer = time::DTDelay::new(cfg.stagnation_timeout_s);
 
-    while game.score() < cfg.max_game_score {
+    while game.score(0) < cfg.max_game_score {
         let frame_dt = cfg.frame_delta_time(rng);
-        let output = brain.predict(ai_player::generate_inputs(&game, frame_dt as f32));
+        let output = brain.predict(ai_player::generate_inputs(&game, 0, frame_dt as f32));
 
-        ai_player::apply_action(&mut game, &output);
+        ai_player::apply_action(&mut game, 0, &output);
 
         game.update(frame_dt);
         elapsed_s += frame_dt;
         save_timer.update(frame_dt);
 
-        if game.lost {
-            // println!("Lost: {}", game.score());
+        if game.lost.get(0).copied().unwrap_or(false) {
+            // println!("Lost: {}", game.score(0));
             break;
         }
 
         if save_timer.ended() {
-            if game.score() == saved_score {
+            if game.score(0) == saved_score {
                 // The player stagnated and needs to be shot (ingame)
-                game.lost = true;
+                if let Some(lost0) = game.lost.get_mut(0) {
+                    *lost0 = true;
+                }
                 break;
             }
-            saved_score = game.score();
+            saved_score = game.score(0);
             save_timer.restart_custom_timeline(save_timer.time_since_ended());
         }
     }
@@ -193,7 +204,7 @@ fn play_game(brain: &Brain, cfg: &TrainerCli, rng: &mut impl Rng) -> f32 {
     let penalty_time_s = (elapsed_s - cfg.fitness_time_grace_s).max(0.0) as f32;
     let time_penalty = penalty_time_s * cfg.fitness_time_penalty_per_s;
 
-    game.score() - time_penalty
+    game.score(0) - time_penalty
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -236,8 +247,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut sim = GeneticSim::new(
         Vec::gen_random(&mut rng, cfg.population_size),
-        SpeciatedFitnessEliminator::from_fitness_eliminator(fitness_elim, cfg.speciation_threshold, diverg.clone()),
-        SpeciatedCrossoverRepopulator::from_crossover(crossover, cfg.speciation_threshold, ActionIfIsolated::CrossoverSimilarSpecies, diverg),
+        SpeciatedFitnessEliminator::from_fitness_eliminator(
+            fitness_elim,
+            cfg.speciation_threshold,
+            diverg.clone(),
+        ),
+        SpeciatedCrossoverRepopulator::from_crossover(
+            crossover,
+            cfg.speciation_threshold,
+            ActionIfIsolated::CrossoverSimilarSpecies,
+            diverg,
+        ),
     );
 
     for _ in 0..cfg.nb_generations {

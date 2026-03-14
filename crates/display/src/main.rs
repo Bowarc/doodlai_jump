@@ -83,7 +83,7 @@ fn update_main_menu() -> Transition {
     let ai_rect = Rect::new(center_x - btn_w / 2.0, center_y + 60.0, btn_w, btn_h);
 
     if draw_button(play_rect, "Play") {
-        return Transition::To(AppState::UserPlaying { game: Game::new() });
+        return Transition::To(AppState::UserPlaying { game: Game::new(1) });
     }
 
     if draw_button(ai_rect, "AI Play") {
@@ -153,7 +153,7 @@ fn update_ai_menu(selected_model: &mut Option<PathBuf>, picking: &mut bool) -> T
                 Ok(brain) => {
                     return Transition::To(AppState::AIPlaying {
                         brain,
-                        game: Game::new(),
+                        game: Game::new(1),
                     });
                 }
                 Err(e) => {
@@ -178,12 +178,12 @@ fn update_ai_menu(selected_model: &mut Option<PathBuf>, picking: &mut bool) -> T
 fn update_user_playing(game: &mut Game) -> Transition {
     clear_background(BLACK);
 
-    // Input
+    // Input (player 0)
     if is_key_down(KeyCode::Left) || is_key_down(KeyCode::A) {
-        game.player_move(MoveDirection::Left);
+        game.player_move(0, MoveDirection::Left);
     }
     if is_key_down(KeyCode::Right) || is_key_down(KeyCode::D) {
-        game.player_move(MoveDirection::Right);
+        game.player_move(0, MoveDirection::Right);
     }
 
     let dt = get_frame_time() as f64;
@@ -191,10 +191,10 @@ fn update_user_playing(game: &mut Game) -> Transition {
 
     draw_game(game);
 
-    if game.lost {
+    if game.lost.get(0).copied().unwrap_or(false) {
         draw_game_over(game);
         if is_key_pressed(KeyCode::Enter) || is_key_pressed(KeyCode::Space) {
-            return Transition::To(AppState::UserPlaying { game: Game::new() });
+            return Transition::To(AppState::UserPlaying { game: Game::new(1) });
         }
         if is_key_pressed(KeyCode::Escape) {
             return Transition::To(AppState::MainMenu);
@@ -210,20 +210,20 @@ fn update_ai_playing(brain: &Brain, game: &mut Game) -> Transition {
     clear_background(BLACK);
 
     let dt = get_frame_time();
-    let inputs = ai_player::generate_inputs(game, dt);
+    let inputs = ai_player::generate_inputs(game, 0, dt);
     let output = brain.predict(inputs);
-    ai_player::apply_action(game, &output);
+    ai_player::apply_action(game, 0, &output);
 
     game.update(dt as f64);
 
     draw_game(game);
 
-    if game.lost {
+    if game.lost.get(0).copied().unwrap_or(false) {
         draw_game_over(game);
         if is_key_pressed(KeyCode::Enter) || is_key_pressed(KeyCode::Space) {
             return Transition::To(AppState::AIPlaying {
                 brain: brain.clone(),
-                game: Game::new(),
+                game: Game::new(1),
             });
         }
         if is_key_pressed(KeyCode::Escape) {
@@ -241,7 +241,7 @@ fn update_ai_playing(brain: &Brain, game: &mut Game) -> Transition {
 // ---------------------------------------------------------------------------
 
 /// Map game coordinates to screen coordinates.
-/// Game uses y-up with scroll; screen uses y-down from top-left.
+/// Game uses y-up with per-player scroll; screen uses y-down from top-left.
 fn game_to_screen(game: &Game, gx: f64, gy: f64) -> (f32, f32) {
     let scale_x = screen_width() / doodl_jump::GAME_WIDTH as f32;
     let scale_y = screen_height() / doodl_jump::GAME_HEIGHT as f32;
@@ -251,8 +251,9 @@ fn game_to_screen(game: &Game, gx: f64, gy: f64) -> (f32, f32) {
     let offset_y = (screen_height() - doodl_jump::GAME_HEIGHT as f32 * scale) / 2.0;
 
     let sx = gx as f32 * scale + offset_x;
-    // Shift by scroll so the camera follows the player.
-    let sy = (gy - game.scroll as f64) as f32 * scale + offset_y;
+    // Shift by scroll so the camera follows player 0.
+    let scroll0 = game.scrolls.get(0).copied().unwrap_or(0) as f64;
+    let sy = (gy - scroll0) as f32 * scale + offset_y;
 
     (sx, sy)
 }
@@ -275,16 +276,17 @@ fn draw_game(game: &Game) {
         draw_rectangle(sx, sy, w, h, GREEN);
     }
 
-    // Player
-    let player_tl = game.player.rect.aa_topleft();
+    // Player (player 0)
+    let player0 = &game.players[0];
+    let player_tl = player0.rect.aa_topleft();
     let (px, py) = game_to_screen(game, player_tl.x, player_tl.y);
-    let pw = game.player.rect.width() as f32 * scale;
-    let ph = game.player.rect.height() as f32 * scale;
+    let pw = player0.rect.width() as f32 * scale;
+    let ph = player0.rect.height() as f32 * scale;
     draw_rectangle(px, py, pw, ph, YELLOW);
 
-    // Score
+    // Score (player 0)
     draw_text(
-        &format!("Score: {:.0}", game.score()),
+        &format!("Score: {:.0}", game.score(0)),
         10.0,
         30.0,
         28.0,
@@ -307,7 +309,7 @@ fn draw_game_over(game: &Game) {
         RED,
     );
 
-    let score_text = format!("Score: {:.0}", game.score());
+    let score_text = format!("Score: {:.0}", game.score(0));
     let score_dims = measure_text(&score_text, None, 28, 1.0);
     draw_text(
         &score_text,
